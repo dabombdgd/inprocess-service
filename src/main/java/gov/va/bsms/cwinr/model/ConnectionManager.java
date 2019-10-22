@@ -7,17 +7,17 @@ import java.sql.SQLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gov.va.bsms.cwinr.utils.ConfigurationManager;
+
 public class ConnectionManager {
 	private static Logger LOGGER = LoggerFactory.getLogger(ConnectionManager.class);
-
-	private static final String URL = "jdbc:mysql://localhost:3306/testdb";
-	public static final String USER = "testuser";
-	public static final String PASS = "testpass";
 
 	public static Connection getConnection() {
 		Connection returnVal = null;
 		try {
-			returnVal = DriverManager.getConnection(URL, USER, PASS);
+			returnVal = DriverManager.getConnection(ConfigurationManager.INSTANCE.getResources().getString("jdbc-url"),
+					ConfigurationManager.INSTANCE.getResources().getString("jdbc-user"),
+					ConfigurationManager.INSTANCE.getResources().getString("jdbc-password"));
 
 			if (returnVal != null) {
 				LOGGER.debug("Connected to the database!");
@@ -26,7 +26,7 @@ public class ConnectionManager {
 			}
 
 		} catch (SQLException e) {
-			LOGGER.error("SQL State: %s\n%s", e.getSQLState(), e.getMessage());
+			LOGGER.error("SQL State: {}\n{}", e.getSQLState(), e.getMessage());
 		}
 
 		return returnVal;
