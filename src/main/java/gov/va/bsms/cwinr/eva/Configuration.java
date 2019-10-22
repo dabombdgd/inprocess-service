@@ -1,0 +1,87 @@
+package gov.va.bsms.cwinr.eva;
+
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Properties;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/*
+        This class automatically reloads the configuration after each file change. Similar to JavaWatch and nio.
+        This class extends Object and not Properties to discourage unchecked direct calls that are part of the API. (style)
+*/
+
+public class Configuration {
+	static Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
+	private static Configuration theConfiguration;
+	private Properties properties = new Properties();
+	private File file = null;
+	private long nextCheckMS = 0;
+	private long lastModified = 0;
+
+	public Configuration(String filename) {
+		theConfiguration = this;
+		file = new File(filename);
+		check();
+	}
+
+	static Configuration get() {
+		return theConfiguration;
+	}
+
+	private synchronized void load() {
+		LOGGER.info("Configuration loads " + file.getName());
+		try {
+			FileReader reader = new FileReader(file);
+			properties = new Properties(); // or .clear()
+			properties.load(reader);
+		} catch (IOException e) {
+			LOGGER.error("Failed to load file: {}", file);
+		}
+	}
+
+	private synchronized void checkNow() {
+		nextCheckMS = System.currentTimeMillis() + (10 * 1000); // Check every 10 sec
+		long modifiedTime = file.lastModified();
+		if (lastModified != modifiedTime) {
+			lastModified = modifiedTime;
+			load();
+		}
+	}
+
+	private void check() {
+		if (System.currentTimeMillis() > nextCheckMS) {
+			checkNow();
+		}
+	}
+
+	String getString(String key) {
+		check();
+		String value = properties.getProperty(key);
+		if (value == null)
+			System.out.println("Missing '" + key + "' in " + file.getName());
+		return value;
+	}
+
+	String getString(String key, String suffix) {
+		return (getString(key + "-" + getString(suffix.substring(1))));
+	}
+
+	Integer getInt(String key) {
+		return Integer.valueOf(getString(key));
+	}
+
+	Boolean getBool(String key) {
+		return getString(key).equalsIgnoreCase("on");
+	}
+
+	Boolean isValid(String key) {
+		return (getString(key).length() > 0);
+	}
+
+	Boolean isValid(String key, String suffix) {
+		return (getString(key, suffix).length() > 0);
+	}
+}
