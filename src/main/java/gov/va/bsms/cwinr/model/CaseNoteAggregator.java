@@ -12,11 +12,31 @@ public class CaseNoteAggregator {
 	 */
 	public CaseNoteAggregator() {
 		CaseNoteDao cnDao = new CaseNoteDao();
-		setCaseNotes(cnDao.getCaseNotesForProcessing());
+		setCaseNotesForProcessing(cnDao.getCaseNotesForProcessing());
 	}
 	
-	private void setCaseNotes(List<CaseNote2> caseNotesNew) {
-		this.caseNotesForProcessing = caseNotesNew;
+	public List<CaseNote2> getCaseNotesForProcessing() {
+		return caseNotesForProcessing;
+	}
+
+	public void setCaseNotesForProcessing(List<CaseNote2> caseNotesForProcessing) {
+		this.caseNotesForProcessing = caseNotesForProcessing;
+	}
+
+	/**
+	 * 
+	 * @return Returns a {@link List}<{@link CaseNote2}> that have the caseId as a not null value.
+	 */
+	public List<CaseNote2> getCaseNotesWithNonDbError() {
+		List<CaseNote2> returnVal = new ArrayList<CaseNote2>();
+		
+		for(CaseNote2 caseNoteForProcessing : this.caseNotesForProcessing) {
+			if(!caseNoteForProcessing.isWithDBError()) {
+				returnVal.add(caseNoteForProcessing);
+			}
+		}
+		
+		return returnVal;
 	}
 
 	/**

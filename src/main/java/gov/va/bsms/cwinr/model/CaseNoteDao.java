@@ -77,7 +77,7 @@ public class CaseNoteDao {
 		Connection conn = null;
 		String insertErrorLoggingTableSQL = "insert into log_error (ERROR_ID,ERROR_DATE,CLIENT_ID,"
 				+ "IN_FROM_SARA_ID,TYPE,ERROR,ERROR_THREAD,SENT_TO_CENTRAL,SENT_DATE)"
-				+ "values (?,?,?,?,'IN','CASE_ID NOT FOUND','','','')";
+				+ "values (ERROR_ID_SEQ.NEXTVAL,?,?,?,'IN','CASE_ID NOT FOUND','','','')";
 
 		try {
 			conn = ConnectionManager.getConnection();
@@ -87,12 +87,9 @@ public class CaseNoteDao {
 			for(CaseNote2 erroredCaseNote : erroredCaseNotes) {
 				long millis=System.currentTimeMillis();
 				Date date=new Date(millis);
-				//:TODO find out what ERROR_ID should be set to
-				//:TODO get the column types and what should be parameterized.
-				updateErrorTableStmnt.setInt(1,-999);
-				updateErrorTableStmnt.setDate(2, date);
-				updateErrorTableStmnt.setInt(3,Integer.parseInt(erroredCaseNote.getClientId()));
-				updateErrorTableStmnt.setInt(4,Integer.parseInt(erroredCaseNote.getInFromSaraId()));
+				updateErrorTableStmnt.setDate(1, date);
+				updateErrorTableStmnt.setInt(2,Integer.parseInt(erroredCaseNote.getClientId()));
+				updateErrorTableStmnt.setInt(3,Integer.parseInt(erroredCaseNote.getInFromSaraId()));
 				updateErrorTableStmnt.executeUpdate();
 				conn.commit();
 			}
@@ -116,11 +113,33 @@ public class CaseNoteDao {
 	 * @param erroredBgsCaseNotes
 	 */
 	public void updateErroredCaseNote(List<CaseNote2> erroredDbCaseNotes) {
-		// :TODO update errored casenote
-
-		// :TODO get the column types and what should be parameterized.
+		PreparedStatement updateErrorCaseNoteTableStmnt = null;
+		Connection conn = null;
 		String updateCaseNoteTableSQL = "update TBL_IN_FROM_SARA set PROCESS_STATUS = '1' "
 				+ "where IN_FROM_SARA_ID = ?";
+
+		try {
+			conn = ConnectionManager.getConnection();
+	        conn.setAutoCommit(false);
+	        updateErrorCaseNoteTableStmnt = conn.prepareStatement(updateCaseNoteTableSQL);
+
+			for(CaseNote2 erroredCaseNote : erroredDbCaseNotes) {
+				updateErrorCaseNoteTableStmnt.setInt(1, Integer.parseInt(erroredCaseNote.getInFromSaraId()));
+				updateErrorCaseNoteTableStmnt.executeUpdate();
+				conn.commit();
+			}
+
+		} catch (SQLException e) {
+			LOGGER.error(e.getMessage());
+		} finally {
+			if (updateErrorCaseNoteTableStmnt != null) {
+				try {
+					updateErrorCaseNoteTableStmnt.close();
+				} catch (SQLException e) {
+					LOGGER.error(e.getMessage());
+				}
+			}
+		}
 	}
 
 	/**
@@ -130,11 +149,34 @@ public class CaseNoteDao {
 	 * @param nonErroredCaseNotes
 	 */
 	public void updateNonDbErroredCaseNotes(List<CaseNote2> nonErroredCaseNotes) {
-		// :TODO update successful casenote
-
-		// :TODO get the column types and what should be parameterized.
+		PreparedStatement updateErrorCaseNoteTableStmnt = null;
+		Connection conn = null;
 		String updateCaseNoteTableSQL = "update TBL_IN_FROM_SARA set PROCESS_STATUS = '1', "
 				+ "ADDITIONAL10 = ? where IN_FROM_SARA_ID = ?";
+
+		try {
+			conn = ConnectionManager.getConnection();
+	        conn.setAutoCommit(false);
+	        updateErrorCaseNoteTableStmnt = conn.prepareStatement(updateCaseNoteTableSQL);
+
+			for(CaseNote2 erroredCaseNote : nonErroredCaseNotes) {
+				updateErrorCaseNoteTableStmnt.setInt(1, Integer.parseInt(erroredCaseNote.getCaseId()));
+				updateErrorCaseNoteTableStmnt.setInt(2, Integer.parseInt(erroredCaseNote.getInFromSaraId()));
+				updateErrorCaseNoteTableStmnt.executeUpdate();
+				conn.commit();
+			}
+
+		} catch (SQLException e) {
+			LOGGER.error(e.getMessage());
+		} finally {
+			if (updateErrorCaseNoteTableStmnt != null) {
+				try {
+					updateErrorCaseNoteTableStmnt.close();
+				} catch (SQLException e) {
+					LOGGER.error(e.getMessage());
+				}
+			}
+		}
 	}
 
 	/**
@@ -144,11 +186,34 @@ public class CaseNoteDao {
 	 * @param newCaseNotes
 	 */
 	public void insertNewCaseNotes(List<CaseNote2> newCaseNotes) {
-		// :TODO insert casenote xref
-
-		// :TODO get the column types and what should be parameterized.
+		PreparedStatement insertSaraCorpDbXrefTableStmnt = null;
+		Connection conn = null;
 		String updateCaseNoteTableSQL = "insert into SARA_CORPDB_XREF (XREF_ID, CASE_NOTE_ID, CASE_DCMNT_ID) "
-				+ "values (?, ?, ?)";
+				+ "values (sara_corpdb_xref_seq.nextval, ?, ?)";
+
+		try {
+			conn = ConnectionManager.getConnection();
+	        conn.setAutoCommit(false);
+			insertSaraCorpDbXrefTableStmnt = conn.prepareStatement(updateCaseNoteTableSQL);
+
+			for(CaseNote2 newCaseNote : newCaseNotes) {
+				insertSaraCorpDbXrefTableStmnt.setInt(2,Integer.parseInt(newCaseNote.getCaseNoteId()));
+				insertSaraCorpDbXrefTableStmnt.setInt(3,Integer.parseInt(newCaseNote.getCaseDocumentId()));
+				insertSaraCorpDbXrefTableStmnt.executeUpdate();
+				conn.commit();
+			}
+
+		} catch (SQLException e) {
+			LOGGER.error(e.getMessage());
+		} finally {
+			if (insertSaraCorpDbXrefTableStmnt != null) {
+				try {
+					insertSaraCorpDbXrefTableStmnt.close();
+				} catch (SQLException e) {
+					LOGGER.error(e.getMessage());
+				}
+			}
+		}
 	}
 
 }
