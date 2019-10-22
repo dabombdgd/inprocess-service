@@ -5,6 +5,12 @@ import java.util.ResourceBundle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * This Singleton is responsible for reading the eva.properties file.
+ * 
+ * @author Jason Williams
+ *
+ */
 public enum ConfigurationManager {
 	INSTANCE;
 
@@ -16,7 +22,9 @@ public enum ConfigurationManager {
 	}
 
 	ConfigurationManager() {
-		this.resources = ResourceBundle.getBundle("eva");
+		if(resources == null) {
+			this.resources = ResourceBundle.getBundle("eva");
+		}
 	}
 
 }

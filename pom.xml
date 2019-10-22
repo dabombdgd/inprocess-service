@@ -10,6 +10,18 @@
 		<cxf.version>3.3.3</cxf.version>
 	</properties>
 	<build>
+	  <resources>
+	    <resource>
+	      <directory>src/main/resources</directory>
+	      <includes>
+	        <include>eVA.config</include>
+	        <include>eva.properties</include>
+	        <include>log4j.properties</include>
+	      </includes>
+	      <filtering>true</filtering>
+	    </resource>
+	  </resources>
+	
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -48,7 +60,7 @@
 	</build>
 
 	<dependencies>
-		<!-- <dependency>
+		<dependency>
 			<groupId>org.apache.cxf</groupId>
 			<artifactId>cxf-rt-frontend-jaxws</artifactId>
 			<version>${cxf.version}</version>
@@ -57,7 +69,7 @@
 			<groupId>org.apache.cxf</groupId>
 			<artifactId>cxf-rt-transports-http</artifactId>
 			<version>${cxf.version}</version>
-		</dependency> -->
+		</dependency>
 		<dependency>
 		    <groupId>com.oracle</groupId>
 		    <artifactId>ojdbc8</artifactId>

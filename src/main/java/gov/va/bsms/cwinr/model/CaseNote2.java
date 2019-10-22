@@ -77,9 +77,7 @@ public class CaseNote2 {
 
 		// if the case_id is null, then set withdberror to true, so that it will not be
 		// processed by the BGS SOAP service call.
-		if (StringUtils.isEmpty(caseId)) {
-			setWithDBError(true);
-		}
+		setWithDBError(StringUtils.isEmpty(caseId));
 	}
 
 	public String getBenefitClaimNoyeTypeCd() {
@@ -104,6 +102,10 @@ public class CaseNote2 {
 
 	public void setCaseDocumentId(String caseDocumentId) {
 		this.caseDocumentId = caseDocumentId;
+
+		// if the case document id value is null then this will be an insert call to the
+		// BGS SOAP service
+		setUpdate(!StringUtils.isEmpty(caseDocumentId));
 	}
 
 	public String getNvlCD() {
