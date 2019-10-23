@@ -1,9 +1,16 @@
 package gov.va.bsms.cwinr.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import gov.va.bsms.cwinr.exceptions.CaseNotesDaoException;
+
 public class CaseNoteAggregator {
+	private static Logger LOGGER = LoggerFactory.getLogger(CaseNoteAggregator.class);
 	
 	private List<CaseNote2> caseNotesForProcessing;
 	
@@ -12,7 +19,13 @@ public class CaseNoteAggregator {
 	 */
 	public CaseNoteAggregator() {
 		CaseNoteDao cnDao = new CaseNoteDao();
-		setCaseNotesForProcessing(cnDao.getCaseNotesForProcessing());
+		try {
+			setCaseNotesForProcessing(cnDao.getCaseNotesForProcessing());
+		} catch (CaseNotesDaoException e) {
+			LOGGER.error(e.getMessage());
+		} finally {
+			this.caseNotesForProcessing = Collections.<CaseNote2>emptyList();
+		}
 	}
 	
 	public List<CaseNote2> getCaseNotesForProcessing() {

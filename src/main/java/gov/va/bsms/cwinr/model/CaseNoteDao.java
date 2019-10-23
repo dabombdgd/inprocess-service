@@ -11,6 +11,9 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gov.va.bsms.cwinr.exceptions.CaseNotesDaoException;
+import gov.va.bsms.cwinr.exceptions.ConnectionManagerException;
+
 public class CaseNoteDao {
 	static Logger LOGGER = LoggerFactory.getLogger(CaseNoteDao.class);
 
@@ -19,18 +22,27 @@ public class CaseNoteDao {
 	 * processing
 	 * 
 	 * @return
+	 * @throws CaseNotesDaoException
 	 */
-	public List<CaseNote2> getCaseNotesForProcessing() {
+	public List<CaseNote2> getCaseNotesForProcessing() throws CaseNotesDaoException {
 		List<CaseNote2> returnVal = new ArrayList<CaseNote2>();
 
 		PreparedStatement selectCaseNotesForProcessingStmnt = null;
-		String caseNoteProcessingSQL = "select in.IN_FROM_SARA_ID,in.CLIENT_ID,in.CASE_NOTE_DATE, "
-				+ "substr(in.CASE_NOTE,1,30000) as CASE_NOTE,in.PROCESS_STATUS,in.CASE_NOTE_ID, "
-				+ "in.ADDITIONAL1 as CASE_ID,in.ADDITIONAL2 as BNFT_CLAIM_NOTE_TYPE_CD,in.ADDITIONAL3, "
-				+ "scx.CASE_DCMNT_ID,NVL(et.CD,'001') as NVL_CD "
-				+ "from CWINRS.TBL_IN_FROM_SARA in, CWINRS.SARA_CORPDB_XREF scx, CWINRS.EVA_TYPE "
-				+ "where in.PROCESS_STATUS is NULL and scx.CASE_NOTE_ID (+) = to_number(in.CASE_NOTE_ID) "
-				+ "and et.CD (+) = in.ADDITIONAL2 order by in.CASE_NOTE_DATE";
+		String caseNoteProcessingSQL = "select ifs.IN_FROM_SARA_ID,"
+				+ "ifs.CLIENT_ID,"
+				+ "ifs.CASE_NOTE_DATE,"
+				+ "substr(ifs.CASE_NOTE,1,30000) as CASE_NOTE,"
+				+ "ifs.PROCESS_STATUS,"
+				+ "ifs.CASE_NOTE_ID,"
+				+ "ifs.ADDITIONAL1 as CASE_ID,"
+				+ "ifs.ADDITIONAL2 as BNFT_CLAIM_NOTE_TYPE_CD,"
+				+ "ifs.ADDITIONAL3,"
+				+ "scx.CASE_DCMNT_ID,"
+				+ "NVL(et.CD,'001') as NVL_CD "
+				+ "from TBL_IN_FROM_SARA ifs, SARA_CORPDB_XREF scx, EVA_TYPE et "
+				+ "where ifs.PROCESS_STATUS is NULL and scx.CASE_NOTE_ID (+) = to_number(ifs.CASE_NOTE_ID) "
+				+ "and et.CD (+) = ifs.ADDITIONAL2 "
+				+ "order by ifs.CASE_NOTE_DATE";
 
 		try {
 			CaseNote2 tempCaseNote = new CaseNote2();
@@ -53,7 +65,10 @@ public class CaseNoteDao {
 			}
 		} catch (SQLException e) {
 			LOGGER.error(e.getMessage());
-		} finally {
+			throw new CaseNotesDaoException(e.getMessage());
+		} catch (ConnectionManagerException e) {
+			throw new CaseNotesDaoException(e.getMessage());
+	} finally {
 			if (selectCaseNotesForProcessingStmnt != null) {
 				try {
 					selectCaseNotesForProcessingStmnt.close();
@@ -71,8 +86,9 @@ public class CaseNoteDao {
 	 * is NULL or BGS returns with bad data
 	 * 
 	 * @param erroredCaseNotes
+	 * @throws CaseNotesDaoException
 	 */
-	public void insertErrorCaseNotes(List<CaseNote2> erroredCaseNotes) {
+	public void insertErrorCaseNotes(List<CaseNote2> erroredCaseNotes) throws CaseNotesDaoException {
 		PreparedStatement updateErrorTableStmnt = null;
 		Connection conn = null;
 		String insertErrorLoggingTableSQL = "insert into log_error (ERROR_ID,ERROR_DATE,CLIENT_ID,"
@@ -96,6 +112,9 @@ public class CaseNoteDao {
 
 		} catch (SQLException e) {
 			LOGGER.error(e.getMessage());
+			throw new CaseNotesDaoException(e.getMessage());
+		} catch (ConnectionManagerException e) {
+			throw new CaseNotesDaoException(e.getMessage());
 		} finally {
 			if (updateErrorTableStmnt != null) {
 				try {
@@ -111,8 +130,9 @@ public class CaseNoteDao {
 	 * This method is only called if CASE_ID is NULL within a case note.
 	 * 
 	 * @param erroredBgsCaseNotes
+	 * @throws CaseNotesDaoException
 	 */
-	public void updateErroredCaseNote(List<CaseNote2> erroredDbCaseNotes) {
+	public void updateErroredCaseNote(List<CaseNote2> erroredDbCaseNotes) throws CaseNotesDaoException {
 		PreparedStatement updateErrorCaseNoteTableStmnt = null;
 		Connection conn = null;
 		String updateCaseNoteTableSQL = "update TBL_IN_FROM_SARA set PROCESS_STATUS = '1' "
@@ -131,6 +151,9 @@ public class CaseNoteDao {
 
 		} catch (SQLException e) {
 			LOGGER.error(e.getMessage());
+			throw new CaseNotesDaoException(e.getMessage());
+		} catch (ConnectionManagerException e) {
+			throw new CaseNotesDaoException(e.getMessage());
 		} finally {
 			if (updateErrorCaseNoteTableStmnt != null) {
 				try {
@@ -147,8 +170,9 @@ public class CaseNoteDao {
 	 * NULL CASE_ID.
 	 * 
 	 * @param nonErroredCaseNotes
+	 * @throws CaseNotesDaoException
 	 */
-	public void updateNonDbErroredCaseNotes(List<CaseNote2> nonErroredCaseNotes) {
+	public void updateNonDbErroredCaseNotes(List<CaseNote2> nonErroredCaseNotes) throws CaseNotesDaoException {
 		PreparedStatement updateErrorCaseNoteTableStmnt = null;
 		Connection conn = null;
 		String updateCaseNoteTableSQL = "update TBL_IN_FROM_SARA set PROCESS_STATUS = '1', "
@@ -168,6 +192,9 @@ public class CaseNoteDao {
 
 		} catch (SQLException e) {
 			LOGGER.error(e.getMessage());
+			throw new CaseNotesDaoException(e.getMessage());
+		} catch (ConnectionManagerException e) {
+			throw new CaseNotesDaoException(e.getMessage());
 		} finally {
 			if (updateErrorCaseNoteTableStmnt != null) {
 				try {
@@ -184,8 +211,9 @@ public class CaseNoteDao {
 	 * the BGS SOAP service.
 	 * 
 	 * @param newCaseNotes
+	 * @throws CaseNotesDaoException
 	 */
-	public void insertNewCaseNotes(List<CaseNote2> newCaseNotes) {
+	public void insertNewCaseNotes(List<CaseNote2> newCaseNotes) throws CaseNotesDaoException {
 		PreparedStatement insertSaraCorpDbXrefTableStmnt = null;
 		Connection conn = null;
 		String updateCaseNoteTableSQL = "insert into SARA_CORPDB_XREF (XREF_ID, CASE_NOTE_ID, CASE_DCMNT_ID) "
@@ -205,6 +233,9 @@ public class CaseNoteDao {
 
 		} catch (SQLException e) {
 			LOGGER.error(e.getMessage());
+			throw new CaseNotesDaoException(e.getMessage());
+		} catch (ConnectionManagerException e) {
+			throw new CaseNotesDaoException(e.getMessage());
 		} finally {
 			if (insertSaraCorpDbXrefTableStmnt != null) {
 				try {

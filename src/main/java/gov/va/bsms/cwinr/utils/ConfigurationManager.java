@@ -8,8 +8,6 @@ import org.slf4j.LoggerFactory;
 /**
  * This Singleton is responsible for reading the eva.properties file.
  * 
- * @author Jason Williams
- *
  */
 public enum ConfigurationManager {
 	INSTANCE;
