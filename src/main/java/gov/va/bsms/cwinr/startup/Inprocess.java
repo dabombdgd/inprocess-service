@@ -9,10 +9,10 @@ import gov.va.bsms.cwinr.model.CaseNoteDao;
 import gov.va.bsms.cwinr.utils.ConfigurationManager;
 
 public class Inprocess {
-	private static Logger LOGGER = LoggerFactory.getLogger(Inprocess.class);
+	private static Logger logger = LoggerFactory.getLogger(Inprocess.class);
 
 	public static void main(String[] args) {
-		LOGGER.info("Startup of application v.{}", ConfigurationManager.INSTANCE.getResources().getString("version"));
+		logger.info("Startup of application v.{}", ConfigurationManager.INSTANCE.getResources().getString("version"));
 		
 		// initialize start time
         long lStartTime = System.nanoTime();
@@ -22,15 +22,15 @@ public class Inprocess {
 		
 		// generate the List of CaseNotes for processing
 		CaseNoteAggregator caseNoteAggregator = new CaseNoteAggregator();
-		LOGGER.info("Retrieved {} case notes for processing.", caseNoteAggregator.getCaseNotesForProcessing().size());
+		logger.info("Retrieved {} case notes for processing.", caseNoteAggregator.getCaseNotesForProcessing().size());
 		
 		// log all of the CaseNotes with DB errors to the log_error table
 		try {
 			cnDao.insertErrorCaseNotes(caseNoteAggregator.getCaseNotesWithDbError());
 		} catch (CaseNotesDaoException e) {
-			LOGGER.error(e.getMessage());
+			logger.error(e.getMessage());
 		}
-		LOGGER.info("Logged {} case notes with a null ID.", caseNoteAggregator.getCaseNotesWithDbError().size());
+		logger.info("Logged {} case notes with a null ID.", caseNoteAggregator.getCaseNotesWithDbError().size());
 		
 		// call the SOAP client DAO?
 		// ------------------------------------------------------
@@ -41,41 +41,41 @@ public class Inprocess {
 		try {
 			cnDao.insertErrorCaseNotes(caseNoteAggregator.getCaseNoteswithBgsError());
 		} catch (CaseNotesDaoException e) {
-			LOGGER.error(e.getMessage());
+			logger.error(e.getMessage());
 		}
-		LOGGER.info("Logged {} case notes with a service processing error.", caseNoteAggregator.getCaseNoteswithBgsError().size());
+		logger.info("Logged {} case notes with a service processing error.", caseNoteAggregator.getCaseNoteswithBgsError().size());
 		
 		// update CaseNotes with DB errors in the TBL_IN_FROM_SARA table
 		try {
 			cnDao.updateErroredCaseNote(caseNoteAggregator.getCaseNotesWithDbError());
 		} catch (CaseNotesDaoException e) {
-			LOGGER.error(e.getMessage());
+			logger.error(e.getMessage());
 		}
-		LOGGER.info("Updated {} case notes that had a null ID.", caseNoteAggregator.getCaseNotesWithDbError().size());
+		logger.info("Updated {} case notes that had a null ID.", caseNoteAggregator.getCaseNotesWithDbError().size());
 		
 		// update CaseNotes with non DB errors in the TBL_IN_FROM_SARA table
 		try {
 			cnDao.updateNonDbErroredCaseNotes(caseNoteAggregator.getCaseNotesWithNonDbError());
 		} catch (CaseNotesDaoException e) {
-			LOGGER.error(e.getMessage());
+			logger.error(e.getMessage());
 		}
-		LOGGER.info("Updated {} case notes that have an ID.", caseNoteAggregator.getCaseNotesWithNonDbError().size());
+		logger.info("Updated {} case notes that have an ID.", caseNoteAggregator.getCaseNotesWithNonDbError().size());
 		
 		// insert new CaseNotes in the SARA_CORPDB_XREF table
 		try {
 			cnDao.insertNewCaseNotes(caseNoteAggregator.getNewCaseNotes());
 		} catch (CaseNotesDaoException e) {
-			LOGGER.error(e.getMessage());
+			logger.error(e.getMessage());
 		}
-		LOGGER.info("Inserted {} new case notes.", caseNoteAggregator.getNewCaseNotes().size());
+		logger.info("Inserted {} new case notes.", caseNoteAggregator.getNewCaseNotes().size());
 		
 		// end time
         long lEndTime = System.nanoTime();
 		//time elapsed
         long output = lEndTime - lStartTime;
-		LOGGER.info("Total processing time was {} milliseconds for {} case notes.", (output / 1000000), caseNoteAggregator.getCaseNotesForProcessing().size());
+		logger.info("Total processing time was {} milliseconds for {} case notes.", (output / 1000000), caseNoteAggregator.getCaseNotesForProcessing().size());
 
-		LOGGER.info("Shutdown of JAVA Application Version {}", ConfigurationManager.INSTANCE.getResources().getString("version"));
+		logger.info("Shutdown of JAVA Application Version {}", ConfigurationManager.INSTANCE.getResources().getString("version"));
 	}
 
 }

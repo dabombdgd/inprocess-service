@@ -15,7 +15,7 @@ import gov.va.bsms.cwinr.exceptions.CaseNotesDaoException;
 import gov.va.bsms.cwinr.exceptions.ConnectionManagerException;
 
 public class CaseNoteDao {
-	static Logger LOGGER = LoggerFactory.getLogger(CaseNoteDao.class);
+	static Logger logger = LoggerFactory.getLogger(CaseNoteDao.class);
 
 	/**
 	 * This SQL query returns all of the case note needed for BGS Soap service
@@ -25,9 +25,10 @@ public class CaseNoteDao {
 	 * @throws CaseNotesDaoException
 	 */
 	public List<CaseNote2> getCaseNotesForProcessing() throws CaseNotesDaoException {
-		List<CaseNote2> returnVal = new ArrayList<CaseNote2>();
+		List<CaseNote2> returnVal = new ArrayList<>();
 
 		PreparedStatement selectCaseNotesForProcessingStmnt = null;
+		ResultSet rs = null;
 		String caseNoteProcessingSQL = "select ifs.IN_FROM_SARA_ID,"
 				+ "ifs.CLIENT_ID,"
 				+ "ifs.CASE_NOTE_DATE,"
@@ -48,7 +49,7 @@ public class CaseNoteDao {
 			CaseNote2 tempCaseNote = new CaseNote2();
 			selectCaseNotesForProcessingStmnt = ConnectionManager.getConnection()
 					.prepareStatement(caseNoteProcessingSQL);
-			ResultSet rs = selectCaseNotesForProcessingStmnt.executeQuery();
+			rs = selectCaseNotesForProcessingStmnt.executeQuery();
 			while (rs.next()) {
 				tempCaseNote.setClientId(rs.getString("CLIENT_ID"));
 				tempCaseNote.setCaseNoteDate(rs.getString("CASE_NOTE_DATE"));
@@ -64,7 +65,7 @@ public class CaseNoteDao {
 				returnVal.add(tempCaseNote);
 			}
 		} catch (SQLException e) {
-			LOGGER.error(e.getMessage());
+			logger.error(e.getMessage());
 			throw new CaseNotesDaoException(e.getMessage());
 		} catch (ConnectionManagerException e) {
 			throw new CaseNotesDaoException(e.getMessage());
@@ -73,7 +74,14 @@ public class CaseNoteDao {
 				try {
 					selectCaseNotesForProcessingStmnt.close();
 				} catch (SQLException e) {
-					LOGGER.error(e.getMessage());
+					logger.error(e.getMessage());
+				}
+			}
+			if(rs != null) {
+				try {
+					rs.close();
+				} catch (SQLException e) {
+					logger.error(e.getMessage());
 				}
 			}
 		}
@@ -111,7 +119,7 @@ public class CaseNoteDao {
 			}
 
 		} catch (SQLException e) {
-			LOGGER.error(e.getMessage());
+			logger.error(e.getMessage());
 			throw new CaseNotesDaoException(e.getMessage());
 		} catch (ConnectionManagerException e) {
 			throw new CaseNotesDaoException(e.getMessage());
@@ -120,7 +128,7 @@ public class CaseNoteDao {
 				try {
 					updateErrorTableStmnt.close();
 				} catch (SQLException e) {
-					LOGGER.error(e.getMessage());
+					logger.error(e.getMessage());
 				}
 			}
 		}
@@ -150,7 +158,7 @@ public class CaseNoteDao {
 			}
 
 		} catch (SQLException e) {
-			LOGGER.error(e.getMessage());
+			logger.error(e.getMessage());
 			throw new CaseNotesDaoException(e.getMessage());
 		} catch (ConnectionManagerException e) {
 			throw new CaseNotesDaoException(e.getMessage());
@@ -159,7 +167,7 @@ public class CaseNoteDao {
 				try {
 					updateErrorCaseNoteTableStmnt.close();
 				} catch (SQLException e) {
-					LOGGER.error(e.getMessage());
+					logger.error(e.getMessage());
 				}
 			}
 		}
@@ -191,7 +199,7 @@ public class CaseNoteDao {
 			}
 
 		} catch (SQLException e) {
-			LOGGER.error(e.getMessage());
+			logger.error(e.getMessage());
 			throw new CaseNotesDaoException(e.getMessage());
 		} catch (ConnectionManagerException e) {
 			throw new CaseNotesDaoException(e.getMessage());
@@ -200,7 +208,7 @@ public class CaseNoteDao {
 				try {
 					updateErrorCaseNoteTableStmnt.close();
 				} catch (SQLException e) {
-					LOGGER.error(e.getMessage());
+					logger.error(e.getMessage());
 				}
 			}
 		}
@@ -225,14 +233,14 @@ public class CaseNoteDao {
 			insertSaraCorpDbXrefTableStmnt = conn.prepareStatement(updateCaseNoteTableSQL);
 
 			for(CaseNote2 newCaseNote : newCaseNotes) {
-				insertSaraCorpDbXrefTableStmnt.setInt(2,Integer.parseInt(newCaseNote.getCaseNoteId()));
-				insertSaraCorpDbXrefTableStmnt.setInt(3,Integer.parseInt(newCaseNote.getCaseDocumentId()));
+				insertSaraCorpDbXrefTableStmnt.setInt(1,Integer.parseInt(newCaseNote.getCaseNoteId()));
+				insertSaraCorpDbXrefTableStmnt.setInt(2,Integer.parseInt(newCaseNote.getCaseDocumentId()));
 				insertSaraCorpDbXrefTableStmnt.executeUpdate();
 				conn.commit();
 			}
 
 		} catch (SQLException e) {
-			LOGGER.error(e.getMessage());
+			logger.error(e.getMessage());
 			throw new CaseNotesDaoException(e.getMessage());
 		} catch (ConnectionManagerException e) {
 			throw new CaseNotesDaoException(e.getMessage());
@@ -241,7 +249,7 @@ public class CaseNoteDao {
 				try {
 					insertSaraCorpDbXrefTableStmnt.close();
 				} catch (SQLException e) {
-					LOGGER.error(e.getMessage());
+					logger.error(e.getMessage());
 				}
 			}
 		}

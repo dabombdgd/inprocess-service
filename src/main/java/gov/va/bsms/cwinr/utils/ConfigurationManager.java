@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 public enum ConfigurationManager {
 	INSTANCE;
 
-	static Logger LOGGER = LoggerFactory.getLogger(ConfigurationManager.class);
+	static Logger logger = LoggerFactory.getLogger(ConfigurationManager.class);
 	private ResourceBundle resources;
 
 	public ResourceBundle getResources() {

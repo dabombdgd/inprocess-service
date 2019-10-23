@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import gov.va.bsms.cwinr.exceptions.CaseNotesDaoException;
 
 public class CaseNoteAggregator {
-	private static Logger LOGGER = LoggerFactory.getLogger(CaseNoteAggregator.class);
+	private static Logger logger = LoggerFactory.getLogger(CaseNoteAggregator.class);
 	
 	private List<CaseNote2> caseNotesForProcessing;
 	
@@ -22,7 +22,7 @@ public class CaseNoteAggregator {
 		try {
 			setCaseNotesForProcessing(cnDao.getCaseNotesForProcessing());
 		} catch (CaseNotesDaoException e) {
-			LOGGER.error(e.getMessage());
+			logger.error(e.getMessage());
 		} finally {
 			this.caseNotesForProcessing = Collections.<CaseNote2>emptyList();
 		}
@@ -41,7 +41,7 @@ public class CaseNoteAggregator {
 	 * @return Returns a {@link List}<{@link CaseNote2}> that have the caseId as a not null value.
 	 */
 	public List<CaseNote2> getCaseNotesWithNonDbError() {
-		List<CaseNote2> returnVal = new ArrayList<CaseNote2>();
+		List<CaseNote2> returnVal = new ArrayList<>();
 		
 		for(CaseNote2 caseNoteForProcessing : this.caseNotesForProcessing) {
 			if(!caseNoteForProcessing.isWithDBError()) {
@@ -57,7 +57,7 @@ public class CaseNoteAggregator {
 	 * @return Returns a {@link List}<{@link CaseNote2}> that have the caseId as a null value.
 	 */
 	public List<CaseNote2> getCaseNotesWithDbError() {
-		List<CaseNote2> returnVal = new ArrayList<CaseNote2>();
+		List<CaseNote2> returnVal = new ArrayList<>();
 		
 		for(CaseNote2 caseNoteForProcessing : this.caseNotesForProcessing) {
 			if(caseNoteForProcessing.isWithDBError()) {
@@ -73,7 +73,7 @@ public class CaseNoteAggregator {
 	 * @return Returns a {@link List}<{@link CaseNote2}> that have bad BGS SOAP service reponse data.
 	 */
 	public List<CaseNote2> getCaseNoteswithBgsError() {
-		List<CaseNote2> returnVal = new ArrayList<CaseNote2>();
+		List<CaseNote2> returnVal = new ArrayList<>();
 		
 		for(CaseNote2 caseNoteForProcessing : this.caseNotesForProcessing) {
 			if(caseNoteForProcessing.isWithBGSError()) {
@@ -89,7 +89,7 @@ public class CaseNoteAggregator {
 	 * @return Returns a {@link List}<{@link CaseNote2}> that are INSERTS into the BGS SOAP service.
 	 */
 	public List<CaseNote2> getNewCaseNotes() {
-		List<CaseNote2> returnVal = new ArrayList<CaseNote2>();
+		List<CaseNote2> returnVal = new ArrayList<>();
 		
 		for(CaseNote2 caseNoteForProcessing : this.caseNotesForProcessing) {
 			if(!caseNoteForProcessing.isUpdate()) {
