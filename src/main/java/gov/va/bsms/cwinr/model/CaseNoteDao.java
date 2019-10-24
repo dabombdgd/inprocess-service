@@ -41,16 +41,17 @@ public class CaseNoteDao {
 				+ "scx.CASE_DCMNT_ID,"
 				+ "NVL(et.CD,'001') as NVL_CD "
 				+ "from TBL_IN_FROM_SARA ifs, SARA_CORPDB_XREF scx, EVA_TYPE et "
-				+ "where ifs.PROCESS_STATUS is NULL and scx.CASE_NOTE_ID (+) = to_number(ifs.CASE_NOTE_ID) "
+				+ "where ifs.PROCESS_STATUS = '0' and scx.CASE_NOTE_ID (+) = to_number(ifs.CASE_NOTE_ID) "
 				+ "and et.CD (+) = ifs.ADDITIONAL2 "
 				+ "order by ifs.CASE_NOTE_DATE";
 
 		try {
 			CaseNote2 tempCaseNote = new CaseNote2();
-			selectCaseNotesForProcessingStmnt = ConnectionManager.getConnection()
+			selectCaseNotesForProcessingStmnt = ConnectionManager.getConnection(true)
 					.prepareStatement(caseNoteProcessingSQL);
 			rs = selectCaseNotesForProcessingStmnt.executeQuery();
 			while (rs.next()) {
+				tempCaseNote.setInFromSaraId(rs.getString("IN_FROM_SARA_ID"));
 				tempCaseNote.setClientId(rs.getString("CLIENT_ID"));
 				tempCaseNote.setCaseNoteDate(rs.getString("CASE_NOTE_DATE"));
 				tempCaseNote.setCaseNote(rs.getString("CASE_NOTE"));
@@ -70,19 +71,19 @@ public class CaseNoteDao {
 		} catch (ConnectionManagerException e) {
 			throw new CaseNotesDaoException(e.getMessage(), e);
 		} finally {
-			try {
-				if(selectCaseNotesForProcessingStmnt!=null) {
-					selectCaseNotesForProcessingStmnt.close();
+			if(selectCaseNotesForProcessingStmnt!=null) {
+				try {
+						selectCaseNotesForProcessingStmnt.close();
+				} catch (SQLException e) {
+					logger.error(e.getMessage());
 				}
-			} catch (SQLException e) {
-				logger.error(e.getMessage());
 			}
-			try {
-				if(rs!=null) {
-					rs.close();
+			if(rs!=null) {
+				try {
+						rs.close();
+				} catch (SQLException e) {
+					logger.error(e.getMessage());
 				}
-			} catch (SQLException e) {
-				logger.error(e.getMessage());
 			}
 		}
 
@@ -105,28 +106,14 @@ public class CaseNoteDao {
 		
 		// establish connection to Oracle database
 		try {
-			conn = ConnectionManager.getConnection();
+			conn = ConnectionManager.getConnection(false);
 			updateErrorTableStmnt = conn.prepareStatement(insertErrorLoggingTableSQL);
 		} catch (SQLException e) {
 			logger.error(e.getMessage());
 			throw new CaseNotesDaoException(e.getMessage(), e);
 		} catch (ConnectionManagerException e) {
+			ConnectionManager.closeDatabaseObjects(updateErrorTableStmnt, conn);
 			throw new CaseNotesDaoException(e.getMessage(), e);
-		} finally {
-			if(updateErrorTableStmnt!=null) {
-				try {
-					updateErrorTableStmnt.close();
-				} catch (SQLException e) {
-					logger.error(e.getMessage());
-				}
-			}
-			if(conn!=null) {
-				try {
-					conn.close();
-				} catch (SQLException e) {
-					logger.error(e.getMessage());
-				}
-			}
 		}
 
 		// iterate through the case notes for insertion into log_error table
@@ -135,7 +122,6 @@ public class CaseNoteDao {
 				long millis=System.currentTimeMillis();
 				Date date=new Date(millis);
 				if(updateErrorTableStmnt != null && conn != null) {
-			        conn.setAutoCommit(false);
 					updateErrorTableStmnt.setDate(1, date);
 					updateErrorTableStmnt.setInt(2,Integer.parseInt(erroredCaseNote.getClientId()));
 					updateErrorTableStmnt.setInt(3,Integer.parseInt(erroredCaseNote.getInFromSaraId()));
@@ -152,21 +138,7 @@ public class CaseNoteDao {
 				logger.error("log-error table insertion error for the following case note: case_id:{}, case_note_id:{}", erroredCaseNote.getCaseId(), erroredCaseNote.getCaseNoteId());
 			}
 
-			// close the preparedstatement and the connection objects
-			if(updateErrorTableStmnt != null) {
-				try {
-					updateErrorTableStmnt.close();
-				} catch (SQLException e) {
-					logger.error(e.getMessage());
-				}
-			}
-			if(conn!=null) {
-				try {
-					conn.close();
-				} catch (SQLException e) {
-					logger.error(e.getMessage());
-				}
-			}
+			ConnectionManager.closeDatabaseObjects(updateErrorTableStmnt, conn);
 		}
 	}
 
@@ -184,35 +156,20 @@ public class CaseNoteDao {
 		
 		// establish connection to Oracle database
 		try {
-			conn = ConnectionManager.getConnection();
+			conn = ConnectionManager.getConnection(false);
 	        updateErrorCaseNoteTableStmnt = conn.prepareStatement(updateCaseNoteTableSQL);
 		} catch (SQLException e) {
 			logger.error(e.getMessage());
 			throw new CaseNotesDaoException(e.getMessage(), e);
 		} catch (ConnectionManagerException e) {
+			ConnectionManager.closeDatabaseObjects(updateErrorCaseNoteTableStmnt, conn);
 			throw new CaseNotesDaoException(e.getMessage(), e);
-		} finally {
-			if(updateErrorCaseNoteTableStmnt!=null) {
-				try {
-					updateErrorCaseNoteTableStmnt.close();
-				} catch (SQLException e) {
-					logger.error(e.getMessage());
-				}
-			}
-			if(conn!=null) {
-				try {
-					conn.close();
-				} catch (SQLException e) {
-					logger.error(e.getMessage());
-				}
-			}
 		}
 
 		// iterate through the case notes for update of the TBL_IN_FROM_SARA table
 		for(CaseNote2 erroredCaseNote : erroredDbCaseNotes) {
 			try {
 				if(updateErrorCaseNoteTableStmnt != null && conn != null) {
-			        conn.setAutoCommit(false);
 					updateErrorCaseNoteTableStmnt.setInt(1, Integer.parseInt(erroredCaseNote.getInFromSaraId()));
 					updateErrorCaseNoteTableStmnt.executeUpdate();
 					conn.commit();
@@ -229,20 +186,7 @@ public class CaseNoteDao {
 		}
 
 		// close the preparedstatement and the connection objects
-		if(updateErrorCaseNoteTableStmnt != null) {
-			try {
-				updateErrorCaseNoteTableStmnt.close();
-			} catch (SQLException e) {
-				logger.error(e.getMessage());
-			}
-		}
-		if(conn!=null) {
-			try {
-				conn.close();
-			} catch (SQLException e) {
-				logger.error(e.getMessage());
-			}
-		}
+		ConnectionManager.closeDatabaseObjects(updateErrorCaseNoteTableStmnt, conn);
 	}
 
 	/**
@@ -260,36 +204,22 @@ public class CaseNoteDao {
 		
 		// establish connection to Oracle database
 		try {
-			conn = ConnectionManager.getConnection();
+			conn = ConnectionManager.getConnection(false);
 	        updateCaseNoteTableStmnt = conn.prepareStatement(updateCaseNoteTableSQL);
 		} catch (SQLException e) {
 			logger.error(e.getMessage());
 			throw new CaseNotesDaoException(e.getMessage(), e);
 		} catch (ConnectionManagerException e) {
+			ConnectionManager.closeDatabaseObjects(updateCaseNoteTableStmnt, conn);
 			throw new CaseNotesDaoException(e.getMessage(), e);
-		} finally {
-			if(updateCaseNoteTableStmnt!=null) {
-				try {
-					updateCaseNoteTableStmnt.close();
-				} catch (SQLException e) {
-					logger.error(e.getMessage());
-				}
-			}
-			if(conn!=null) {
-				try {
-					conn.close();
-				} catch (SQLException e) {
-					logger.error(e.getMessage());
-				}
-			}
 		}
 
 		// iterate through the case notes for update of the TBL_IN_FROM_SARA table
 		for(CaseNote2 nonErroredCaseNote : nonErroredCaseNotes) {
 			try {
 				if(updateCaseNoteTableStmnt != null && conn != null) {
-			        conn.setAutoCommit(false);
-					updateCaseNoteTableStmnt.setInt(1, Integer.parseInt(nonErroredCaseNote.getCaseId()));
+					String additional10_col = nonErroredCaseNote.isUpdate()?"U":"I";
+					updateCaseNoteTableStmnt.setString(1, additional10_col);
 					updateCaseNoteTableStmnt.setInt(2, Integer.parseInt(nonErroredCaseNote.getInFromSaraId()));
 					updateCaseNoteTableStmnt.executeUpdate();
 					conn.commit();
@@ -305,21 +235,7 @@ public class CaseNoteDao {
 			} 
 		}
 
-		// close the preparedstatement and the connection objects
-		if(updateCaseNoteTableStmnt != null) {
-			try {
-				updateCaseNoteTableStmnt.close();
-			} catch (SQLException e) {
-				logger.error(e.getMessage());
-			}
-		}
-		if(conn!=null) {
-			try {
-				conn.close();
-			} catch (SQLException e) {
-				logger.error(e.getMessage());
-			}
-		}
+		ConnectionManager.closeDatabaseObjects(updateCaseNoteTableStmnt, conn);
 	}
 
 	/**
@@ -337,35 +253,20 @@ public class CaseNoteDao {
 		
 		// establish connection to Oracle database
 		try {
-			conn = ConnectionManager.getConnection();
+			conn = ConnectionManager.getConnection(false);
 	        insertSaraCorpDbXrefTableStmnt = conn.prepareStatement(updateCaseNoteTableSQL);
 		} catch (SQLException e) {
 			logger.error(e.getMessage());
 			throw new CaseNotesDaoException(e.getMessage(), e);
 		} catch (ConnectionManagerException e) {
+			ConnectionManager.closeDatabaseObjects(insertSaraCorpDbXrefTableStmnt, conn);
 			throw new CaseNotesDaoException(e.getMessage(), e);
-		} finally {
-			if(insertSaraCorpDbXrefTableStmnt!=null) {
-				try {
-					insertSaraCorpDbXrefTableStmnt.close();
-				} catch (SQLException e) {
-					logger.error(e.getMessage());
-				}
-			}
-			if(conn!=null) {
-				try {
-					conn.close();
-				} catch (SQLException e) {
-					logger.error(e.getMessage());
-				}
-			}
 		}
 
 		// iterate through the case notes for insertion into SARA_CORPDB_XREF table
 		for(CaseNote2 newCaseNote : newCaseNotes) {
 			try {
 				if(insertSaraCorpDbXrefTableStmnt != null && conn != null) {
-			        conn.setAutoCommit(false);
 					insertSaraCorpDbXrefTableStmnt.setInt(1,Integer.parseInt(newCaseNote.getCaseNoteId()));
 					insertSaraCorpDbXrefTableStmnt.setInt(2,Integer.parseInt(newCaseNote.getCaseDocumentId()));
 					insertSaraCorpDbXrefTableStmnt.executeUpdate();
@@ -382,21 +283,7 @@ public class CaseNoteDao {
 			}
 		}
 
-		// close the preparedstatement and the connection objects
-		if(insertSaraCorpDbXrefTableStmnt != null) {
-			try {
-				insertSaraCorpDbXrefTableStmnt.close();
-			} catch (SQLException e) {
-				logger.error(e.getMessage());
-			}
-		}
-		if(conn!=null) {
-			try {
-				conn.close();
-			} catch (SQLException e) {
-				logger.error(e.getMessage());
-			}
-		}
+		ConnectionManager.closeDatabaseObjects(insertSaraCorpDbXrefTableStmnt, conn);
 	}
 
 }

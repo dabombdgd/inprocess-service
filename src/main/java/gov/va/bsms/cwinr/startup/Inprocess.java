@@ -32,6 +32,14 @@ public class Inprocess {
 		}
 		logger.info("Logged {} case notes with a null ID.", caseNoteAggregator.getCaseNotesWithDbError().size());
 		
+		// update CaseNotes with DB errors in the TBL_IN_FROM_SARA table
+		try {
+			cnDao.updateErroredCaseNote(caseNoteAggregator.getCaseNotesWithDbError());
+		} catch (CaseNotesDaoException e) {
+			logger.error(e.getMessage());
+		}
+		logger.info("Updated {} case notes that had a null ID.", caseNoteAggregator.getCaseNotesWithDbError().size());
+		
 		// call the SOAP client DAO?
 		// ------------------------------------------------------
 		//:TODO create the BGS SOAP Service DAO processing call
@@ -44,14 +52,6 @@ public class Inprocess {
 			logger.error(e.getMessage());
 		}
 		logger.info("Logged {} case notes with a service processing error.", caseNoteAggregator.getCaseNoteswithBgsError().size());
-		
-		// update CaseNotes with DB errors in the TBL_IN_FROM_SARA table
-		try {
-			cnDao.updateErroredCaseNote(caseNoteAggregator.getCaseNotesWithDbError());
-		} catch (CaseNotesDaoException e) {
-			logger.error(e.getMessage());
-		}
-		logger.info("Updated {} case notes that had a null ID.", caseNoteAggregator.getCaseNotesWithDbError().size());
 		
 		// update CaseNotes with non DB errors in the TBL_IN_FROM_SARA table
 		try {

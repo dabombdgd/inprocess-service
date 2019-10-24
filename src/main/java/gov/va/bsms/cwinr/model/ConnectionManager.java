@@ -2,6 +2,7 @@ package gov.va.bsms.cwinr.model;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Properties;
 
@@ -19,7 +20,13 @@ public class ConnectionManager {
 		throw new IllegalStateException("Utility class");
 	}
 
-	public static Connection getConnection() throws ConnectionManagerException {
+	/**
+	 * Method creates the Oracle {@link Connection} object with a set of properties.
+	 * 
+	 * @return
+	 * @throws ConnectionManagerException
+	 */
+	public static Connection getConnection(Boolean autoCommit) throws ConnectionManagerException {
 		Connection returnVal = null;
 
 		// set database connection properties
@@ -31,12 +38,35 @@ public class ConnectionManager {
 		try {
 			returnVal = DriverManager.getConnection(ConfigurationManager.INSTANCE.getResources().getString("jdbc-url"),
 					props);
-
+			returnVal.setAutoCommit(autoCommit);
 		} catch (SQLException e) {
 			logger.error("SQL State: {}, Message: {}", e.getSQLState(), e.getMessage());
 			throw new ConnectionManagerException("Database is not accessible.", e);
 		}
 
 		return returnVal;
+	}
+
+	/**
+	 * Closes the {@link PreparedStatement} and {@link Connection} objects
+	 * 
+	 * @param prepStmnt
+	 * @param conn
+	 */
+	public static void closeDatabaseObjects(PreparedStatement prepStmnt, Connection conn) {
+		if(prepStmnt != null) {
+			try {
+				prepStmnt.close();
+			} catch (SQLException e) {
+				logger.error(e.getMessage());
+			}
+		}
+		if(conn!=null) {
+			try {
+				conn.close();
+			} catch (SQLException e) {
+				logger.error(e.getMessage());
+			}
+		}
 	}
 }
