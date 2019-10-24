@@ -34,7 +34,7 @@ public class ConnectionManager {
 
 		} catch (SQLException e) {
 			logger.error("SQL State: {}, Message: {}", e.getSQLState(), e.getMessage());
-			throw new ConnectionManagerException("Database is not accessible.");
+			throw new ConnectionManagerException("Database is not accessible.", e);
 		}
 
 		return returnVal;
