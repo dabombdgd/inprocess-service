@@ -17,12 +17,14 @@ public class CaseNoteAggregator {
 
 	/**
 	 * The constructor calls the {@link CaseNoteDao} object to create the
-	 * {@link List}<{@link CaseNote2}>.
+	 * {@link List}<{@link CaseNote2Test}>.
 	 */
 	public CaseNoteAggregator() {
 		CaseNoteDao cnDao = new CaseNoteDao();
 		try {
 			setCaseNotesForProcessing(cnDao.getCaseNotesForProcessing());
+			
+			logger.debug("CaseNoteAggregator() count:{}", getCaseNotesForProcessing().size());
 		} catch (CaseNotesDaoException e) {
 			logger.error(e.getMessage());
 			this.caseNotesForProcessing = Collections.<CaseNote2>emptyList();
@@ -39,70 +41,79 @@ public class CaseNoteAggregator {
 
 	/**
 	 * 
-	 * @return Returns a {@link List}<{@link CaseNote2}> that have the caseId as a
+	 * @return Returns a {@link List}<{@link CaseNote2Test}> that have the caseId as a
 	 *         not null value.
 	 */
 	public List<CaseNote2> getCaseNotesWithNonDbError() {
 		List<CaseNote2> returnVal = new ArrayList<>();
 
-		for (CaseNote2 caseNoteForProcessing : this.caseNotesForProcessing) {
-			if (!caseNoteForProcessing.isWithDBError()) {
-				returnVal.add(caseNoteForProcessing);
+		for (CaseNote2 tempCaseNote : this.caseNotesForProcessing) {
+			if (!tempCaseNote.isWithDBError()) {
+				returnVal.add(tempCaseNote);
 			}
 		}
+		
+		logger.debug("getCaseNotesWithNonDbError() count:{}", returnVal.size());
 
 		return returnVal;
 	}
 
 	/**
 	 * 
-	 * @return Returns a {@link List}<{@link CaseNote2}> that have the caseId as a
+	 * @return Returns a {@link List}<{@link CaseNote2Test}> that have the caseId as a
 	 *         null value.
 	 */
 	public List<CaseNote2> getCaseNotesWithDbError() {
 		List<CaseNote2> returnVal = new ArrayList<>();
 
-		for (CaseNote2 caseNoteForProcessing : this.caseNotesForProcessing) {
-			if (caseNoteForProcessing.isWithDBError()) {
-				returnVal.add(caseNoteForProcessing);
+		for (CaseNote2 tempCaseNote : this.caseNotesForProcessing) {
+			if (tempCaseNote.isWithDBError()) {
+				returnVal.add(tempCaseNote);
+				logger.debug("CaseNote - caseid:{} withDbError:{}", tempCaseNote.getCaseId(), tempCaseNote.isWithDBError());
 			}
 		}
+		
+		logger.debug("getCaseNotesWithDbError() count:{}", returnVal.size());
 
 		return returnVal;
 	}
 
 	/**
 	 * 
-	 * @return Returns a {@link List}<{@link CaseNote2}> that have bad BGS SOAP
+	 * @return Returns a {@link List}<{@link CaseNote2Test}> that have bad BGS SOAP
 	 *         service reponse data.
 	 */
 	public List<CaseNote2> getCaseNoteswithBgsError() {
 		List<CaseNote2> returnVal = new ArrayList<>();
 
-		for (CaseNote2 caseNoteForProcessing : this.caseNotesForProcessing) {
-			if (caseNoteForProcessing.isWithBGSError()) {
-				returnVal.add(caseNoteForProcessing);
+		for (CaseNote2 tempCaseNote : this.caseNotesForProcessing) {
+			if (tempCaseNote.isWithBGSError()) {
+				returnVal.add(tempCaseNote);
 			}
 		}
+		
+		logger.debug("getCaseNoteswithBgsError() count:{}", returnVal.size());
 
 		return returnVal;
 	}
 
 	/**
 	 * 
-	 * @return Returns a {@link List}<{@link CaseNote2}> that are INSERTS into the
+	 * @return Returns a {@link List}<{@link CaseNote2Test}> that are INSERTS into the
 	 *         BGS SOAP service.
 	 */
 	public List<CaseNote2> getNewCaseNotes() {
 		List<CaseNote2> returnVal = new ArrayList<>();
 
-		for (CaseNote2 caseNoteForProcessing : this.caseNotesForProcessing) {
+		for (CaseNote2 tempCaseNote : this.caseNotesForProcessing) {
 			// case note is not an update and case not id exists and case note document id exists
-			if (!caseNoteForProcessing.isUpdate() && !StringUtils.isEmpty(caseNoteForProcessing.getCaseNoteId())
-					&& !StringUtils.isEmpty(caseNoteForProcessing.getCaseDocumentId())) {
-				returnVal.add(caseNoteForProcessing);
+			if (!tempCaseNote.isUpdate() && !StringUtils.isEmpty(tempCaseNote.getCaseNoteId())
+					&& !StringUtils.isEmpty(tempCaseNote.getCaseDocumentId())) {
+				returnVal.add(tempCaseNote);
 			}
 		}
+		
+		logger.debug("getNewCaseNotes() count:{}", returnVal.size());
 
 		return returnVal;
 	}

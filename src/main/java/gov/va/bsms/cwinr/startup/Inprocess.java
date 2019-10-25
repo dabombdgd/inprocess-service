@@ -12,7 +12,7 @@ public class Inprocess {
 	private static Logger logger = LoggerFactory.getLogger(Inprocess.class);
 
 	public static void main(String[] args) {
-		logger.info("Startup of application v.{}", ConfigurationManager.INSTANCE.getResources().getString("version"));
+		logger.info("Startup of application v.{}\n", ConfigurationManager.INSTANCE.getResources().getString("version"));
 		
 		// initialize start time
         long lStartTime = System.nanoTime();
@@ -22,7 +22,7 @@ public class Inprocess {
 		
 		// generate the List of CaseNotes for processing
 		CaseNoteAggregator caseNoteAggregator = new CaseNoteAggregator();
-		logger.info("Retrieved {} case notes for processing.", caseNoteAggregator.getCaseNotesForProcessing().size());
+		logger.info("Retrieved {} case notes for processing.\n", caseNoteAggregator.getCaseNotesForProcessing().size());
 		
 		// log all of the CaseNotes with DB errors to the log_error table
 		try {
@@ -30,7 +30,7 @@ public class Inprocess {
 		} catch (CaseNotesDaoException e) {
 			logger.error(e.getMessage());
 		}
-		logger.info("Logged {} case notes with a null ID.", caseNoteAggregator.getCaseNotesWithDbError().size());
+		logger.info("Logged {} case notes with a null ID.\n", caseNoteAggregator.getCaseNotesWithDbError().size());
 		
 		// update CaseNotes with DB errors in the TBL_IN_FROM_SARA table
 		try {
@@ -38,7 +38,7 @@ public class Inprocess {
 		} catch (CaseNotesDaoException e) {
 			logger.error(e.getMessage());
 		}
-		logger.info("Updated {} case notes that had a null ID.", caseNoteAggregator.getCaseNotesWithDbError().size());
+		logger.info("Updated {} case notes that had a null ID.\n", caseNoteAggregator.getCaseNotesWithDbError().size());
 		
 		// call the SOAP client DAO?
 		// ------------------------------------------------------
@@ -51,7 +51,7 @@ public class Inprocess {
 		} catch (CaseNotesDaoException e) {
 			logger.error(e.getMessage());
 		}
-		logger.info("Logged {} case notes with a service processing error.", caseNoteAggregator.getCaseNoteswithBgsError().size());
+		logger.info("Logged {} case notes with a service processing error.\n", caseNoteAggregator.getCaseNoteswithBgsError().size());
 		
 		// update CaseNotes with non DB errors in the TBL_IN_FROM_SARA table
 		try {
@@ -59,7 +59,7 @@ public class Inprocess {
 		} catch (CaseNotesDaoException e) {
 			logger.error(e.getMessage());
 		}
-		logger.info("Updated {} case notes that have an ID.", caseNoteAggregator.getCaseNotesWithNonDbError().size());
+		logger.info("Updated {} case notes that have an ID.\n", caseNoteAggregator.getCaseNotesWithNonDbError().size());
 		
 		// insert new CaseNotes in the SARA_CORPDB_XREF table
 		try {
@@ -67,13 +67,13 @@ public class Inprocess {
 		} catch (CaseNotesDaoException e) {
 			logger.error(e.getMessage());
 		}
-		logger.info("Inserted {} new case notes.", caseNoteAggregator.getNewCaseNotes().size());
+		logger.info("Inserted {} new case notes.\n", caseNoteAggregator.getNewCaseNotes().size());
 		
 		// end time
         long lEndTime = System.nanoTime();
 		//time elapsed
         long output = lEndTime - lStartTime;
-		logger.info("Total processing time was {} milliseconds for {} case notes.", (output / 1000000), caseNoteAggregator.getCaseNotesForProcessing().size());
+		logger.info("Total processing time was {} milliseconds for {} case notes.\n", (output / 1000000), caseNoteAggregator.getCaseNotesForProcessing().size());
 
 		logger.info("Shutdown of JAVA Application Version {}", ConfigurationManager.INSTANCE.getResources().getString("version"));
 	}

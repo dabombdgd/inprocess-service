@@ -8,6 +8,8 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<cxf.version>3.3.3</cxf.version>
+		<sonar.exclusions>**/gov/va/bsms/cwinr/eva/*, **/generated/**/*</sonar.exclusions>
+		<sonar.coverage.exclusions>**/gov/va/bsms/cwinr/eva/*, **/generated/**/*</sonar.coverage.exclusions>
 	</properties>
 	<build>
 	  <resources>
@@ -45,6 +47,7 @@
 							<wsdlOptions>
 								<wsdlOption>
 									<wsdl>${basedir}/WSDL/CaseWebService.wsdl</wsdl>
+									<extendedSoapHeaders>true</extendedSoapHeaders>
 								</wsdlOption>
 							</wsdlOptions>
 						</configuration>
@@ -65,11 +68,11 @@
 			<artifactId>cxf-rt-frontend-jaxws</artifactId>
 			<version>${cxf.version}</version>
 		</dependency>
-		<dependency>
+		<!-- <dependency>
 			<groupId>org.apache.cxf</groupId>
 			<artifactId>cxf-rt-transports-http</artifactId>
 			<version>${cxf.version}</version>
-		</dependency>
+		</dependency> -->
 		<dependency>
 		    <groupId>com.oracle</groupId>
 		    <artifactId>ojdbc8</artifactId>

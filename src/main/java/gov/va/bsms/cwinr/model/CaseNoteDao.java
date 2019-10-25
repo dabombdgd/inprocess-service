@@ -1,7 +1,6 @@
 package gov.va.bsms.cwinr.model;
 
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -41,16 +40,17 @@ public class CaseNoteDao {
 				+ "scx.CASE_DCMNT_ID,"
 				+ "NVL(et.CD,'001') as NVL_CD "
 				+ "from TBL_IN_FROM_SARA ifs, SARA_CORPDB_XREF scx, EVA_TYPE et "
-				+ "where ifs.PROCESS_STATUS = '0' and scx.CASE_NOTE_ID (+) = to_number(ifs.CASE_NOTE_ID) "
+				+ "where (ifs.PROCESS_STATUS = '0' OR ifs.PROCESS_STATUS is NULL) and scx.CASE_NOTE_ID (+) = to_number(ifs.CASE_NOTE_ID) "
 				+ "and et.CD (+) = ifs.ADDITIONAL2 "
 				+ "order by ifs.CASE_NOTE_DATE";
 
 		try {
-			CaseNote2 tempCaseNote = new CaseNote2();
+			CaseNote2 tempCaseNote;
 			selectCaseNotesForProcessingStmnt = ConnectionManager.getConnection(true)
 					.prepareStatement(caseNoteProcessingSQL);
 			rs = selectCaseNotesForProcessingStmnt.executeQuery();
 			while (rs.next()) {
+				tempCaseNote = new CaseNote2();
 				tempCaseNote.setInFromSaraId(rs.getString("IN_FROM_SARA_ID"));
 				tempCaseNote.setClientId(rs.getString("CLIENT_ID"));
 				tempCaseNote.setCaseNoteDate(rs.getString("CASE_NOTE_DATE"));
@@ -102,7 +102,7 @@ public class CaseNoteDao {
 		Connection conn = null;
 		String insertErrorLoggingTableSQL = "insert into log_error (ERROR_ID,ERROR_DATE,CLIENT_ID,"
 				+ "IN_FROM_SARA_ID,TYPE,ERROR,ERROR_THREAD,SENT_TO_CENTRAL,SENT_DATE)"
-				+ "values (ERROR_ID_SEQ.NEXTVAL,?,?,?,'IN','CASE_ID NOT FOUND','','','')";
+				+ "values (LOG_ERROR_SEQ.NEXTVAL,SYSDATE,?,?,'IN','CASE_ID NOT FOUND','','',SYSDATE)";
 		
 		// establish connection to Oracle database
 		try {
@@ -119,12 +119,9 @@ public class CaseNoteDao {
 		// iterate through the case notes for insertion into log_error table
 		for(CaseNote2 erroredCaseNote : erroredCaseNotes) {
 			try {
-				long millis=System.currentTimeMillis();
-				Date date=new Date(millis);
 				if(updateErrorTableStmnt != null && conn != null) {
-					updateErrorTableStmnt.setDate(1, date);
-					updateErrorTableStmnt.setInt(2,Integer.parseInt(erroredCaseNote.getClientId()));
-					updateErrorTableStmnt.setInt(3,Integer.parseInt(erroredCaseNote.getInFromSaraId()));
+					updateErrorTableStmnt.setString(1,erroredCaseNote.getClientId());
+					updateErrorTableStmnt.setInt(2,Integer.parseInt(erroredCaseNote.getInFromSaraId()));
 					updateErrorTableStmnt.executeUpdate();
 					conn.commit();
 				} else {
@@ -137,9 +134,10 @@ public class CaseNoteDao {
 				// log the case note with the case_id and the case_note_id for the failed transaction
 				logger.error("log-error table insertion error for the following case note: case_id:{}, case_note_id:{}", erroredCaseNote.getCaseId(), erroredCaseNote.getCaseNoteId());
 			}
-
-			ConnectionManager.closeDatabaseObjects(updateErrorTableStmnt, conn);
 		}
+
+		// close the preparedstatement and the connection objects
+		ConnectionManager.closeDatabaseObjects(updateErrorTableStmnt, conn);
 	}
 
 	/**
@@ -235,6 +233,7 @@ public class CaseNoteDao {
 			} 
 		}
 
+		// close the preparedstatement and the connection objects
 		ConnectionManager.closeDatabaseObjects(updateCaseNoteTableStmnt, conn);
 	}
 
@@ -283,6 +282,7 @@ public class CaseNoteDao {
 			}
 		}
 
+		// close the preparedstatement and the connection objects
 		ConnectionManager.closeDatabaseObjects(insertSaraCorpDbXrefTableStmnt, conn);
 	}
 

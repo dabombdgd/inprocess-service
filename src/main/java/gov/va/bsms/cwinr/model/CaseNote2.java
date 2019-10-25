@@ -15,8 +15,13 @@ public class CaseNote2 {
 	private String additional3;
 	private String caseDocumentId;
 	private String nvlCD;
+	
+	// SOAP variables
+	String soapResult;
+	String soapError;
+	String modifiedDate;
 
-	private boolean update = false;
+	private boolean update = true;
 	private boolean withDBError = false;
 	private boolean withBGSError = false;
 
@@ -77,7 +82,9 @@ public class CaseNote2 {
 
 		// if the case_id is null, then set withdberror to true, so that it will not be
 		// processed by the BGS SOAP service call.
-		setWithDBError(StringUtils.isEmpty(caseId));
+		if(StringUtils.isEmpty(caseId) || "null".equalsIgnoreCase(caseId)) {
+			setWithDBError(true);
+		}
 	}
 
 	public String getBenefitClaimNoyeTypeCd() {
@@ -105,7 +112,9 @@ public class CaseNote2 {
 
 		// if the case document id value is null then this will be an insert call to the
 		// BGS SOAP service
-		setUpdate(!StringUtils.isEmpty(caseDocumentId));
+		if(StringUtils.isEmpty(caseDocumentId) || "null".equalsIgnoreCase(caseDocumentId)) {
+			setUpdate(false);
+		}
 	}
 
 	public String getNvlCD() {
@@ -114,6 +123,30 @@ public class CaseNote2 {
 
 	public void setNvlCD(String nvlCD) {
 		this.nvlCD = nvlCD;
+	}
+
+	public String getSoapResult() {
+		return soapResult;
+	}
+
+	public void setSoapResult(String soapResult) {
+		this.soapResult = soapResult;
+	}
+
+	public String getSoapError() {
+		return soapError;
+	}
+
+	public void setSoapError(String soapError) {
+		this.soapError = soapError;
+	}
+
+	public String getModifiedDate() {
+		return modifiedDate;
+	}
+
+	public void setModifiedDate(String modifiedDate) {
+		this.modifiedDate = modifiedDate;
 	}
 
 	public boolean isWithDBError() {
