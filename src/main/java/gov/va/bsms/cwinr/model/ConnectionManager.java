@@ -9,6 +9,7 @@ import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gov.va.bsms.cwinr.exceptions.ConfigurationManagerException;
 import gov.va.bsms.cwinr.exceptions.ConnectionManagerException;
 import gov.va.bsms.cwinr.utils.ConfigurationManager;
 import oracle.jdbc.driver.OracleConnection;
@@ -26,7 +27,7 @@ public class ConnectionManager {
 	 * @return
 	 * @throws ConnectionManagerException
 	 */
-	public static Connection getConnection(Boolean autoCommit) throws ConnectionManagerException {
+	public static Connection getConnection(Boolean autoCommit) throws ConnectionManagerException, ConfigurationManagerException {
 		Connection returnVal = null;
 
 		// set database connection properties

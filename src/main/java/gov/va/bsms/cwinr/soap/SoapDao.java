@@ -11,10 +11,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import gov.va.bsms.cwinr.model.CaseNote2;
-import gov.va.vba.vetsnet.services.cases.CaseDcmntDTO;
+/*import gov.va.vba.vetsnet.services.cases.CaseDcmntDTO;
 import gov.va.vba.vetsnet.services.cases.CaseWebService;
 import gov.va.vba.vetsnet.services.cases.CaseWebService_Service;
-import gov.va.vba.vetsnet.services.cases.MessageException;
+import gov.va.vba.vetsnet.services.cases.MessageException;*/
 
 public class SoapDao {
 	private static Logger logger = LoggerFactory.getLogger(SoapDao.class);
@@ -54,39 +54,33 @@ public class SoapDao {
 		
 		//List<CaseNote2> returnVal = Collections.<CaseNote2>emptyList();
 		
-		URL wsdlURL = null;
-		try {
-			wsdlURL = new URL("http://bepwebdevl.vba.va.gov/CaseWebServiceBean/CaseWebService?wsdl");
-		} catch (MalformedURLException e) {
-			logger.error("Error with the WSDL URL: {}", e.getMessage());
-		}
-
-		for(CaseNote2 tempCaseNote : caseNotesForBgsprocessing) {
-			if(!tempCaseNote.isWithDBError()) {
-				CaseDcmntDTO caseDcmntDTO = new CaseDcmntDTO();
-				caseDcmntDTO.setCaseId(Long.parseLong(tempCaseNote.getCaseId()));
-				caseDcmntDTO.setBnftClaimNoteTypeCd(tempCaseNote.getBenefitClaimNoteTypeCd());
-				caseDcmntDTO.setDcmntTxt(tempCaseNote.getCaseNote());
-				
-				if(tempCaseNote.isUpdate()) {
-					caseDcmntDTO.setCaseDcmntId(Long.parseLong(tempCaseNote.getCaseDocumentId()));
-				}
-				
-				CaseWebService_Service caseWebService = new CaseWebService_Service(wsdlURL, SERVICE_NAME);
-				CaseWebService port = caseWebService.getCaseWebServicePort();
-				Holder<CaseDcmntDTO> holder = new Holder<CaseDcmntDTO>(caseDcmntDTO);
-				
-				try {
-					port.updateCaseDcmnt(holder);
-				} catch (MessageException e) {
-					logger.error("Error with the service: {}", e.getMessage());
-					tempCaseNote.setError(e.getMessage());
-					tempCaseNote.setWithBGSError(true);
-				}
-				tempCaseNote.setCaseDocumentId(Long.toString(holder.value.getCaseDcmntId()));
-				//returnVal.add(tempCaseNote);
-			}
-		}
+		/*
+		 * URL wsdlURL = null; try { wsdlURL = new
+		 * URL("http://bepwebdevl.vba.va.gov/CaseWebServiceBean/CaseWebService?wsdl"); }
+		 * catch (MalformedURLException e) { logger.error("Error with the WSDL URL: {}",
+		 * e.getMessage()); }
+		 * 
+		 * for(CaseNote2 tempCaseNote : caseNotesForBgsprocessing) {
+		 * if(!tempCaseNote.isWithDBError()) { CaseDcmntDTO caseDcmntDTO = new
+		 * CaseDcmntDTO();
+		 * caseDcmntDTO.setCaseId(Long.parseLong(tempCaseNote.getCaseId()));
+		 * caseDcmntDTO.setBnftClaimNoteTypeCd(tempCaseNote.getBenefitClaimNoteTypeCd())
+		 * ; caseDcmntDTO.setDcmntTxt(tempCaseNote.getCaseNote());
+		 * 
+		 * if(tempCaseNote.isUpdate()) {
+		 * caseDcmntDTO.setCaseDcmntId(Long.parseLong(tempCaseNote.getCaseDocumentId()))
+		 * ; }
+		 * 
+		 * CaseWebService_Service caseWebService = new CaseWebService_Service(wsdlURL,
+		 * SERVICE_NAME); CaseWebService port = caseWebService.getCaseWebServicePort();
+		 * Holder<CaseDcmntDTO> holder = new Holder<CaseDcmntDTO>(caseDcmntDTO);
+		 * 
+		 * try { port.updateCaseDcmnt(holder); } catch (MessageException e) {
+		 * logger.error("Error with the service: {}", e.getMessage());
+		 * tempCaseNote.setError(e.getMessage()); tempCaseNote.setWithBGSError(true); }
+		 * tempCaseNote.setCaseDocumentId(Long.toString(holder.value.getCaseDcmntId()));
+		 * //returnVal.add(tempCaseNote); } }
+		 */
 		
 		//return returnVal;
 	}

@@ -78,7 +78,7 @@
 			</plugin>
 			
 			<!-- Apache CXF SOAP Client   -->
-			<plugin>
+			<!-- <plugin>
 				<groupId>org.apache.cxf</groupId>
 				<artifactId>cxf-codegen-plugin</artifactId>
 				<version>${cxf.version}</version>
@@ -100,7 +100,7 @@
 						</goals>
 					</execution>
 				</executions>
-			</plugin>
+			</plugin> -->
 		</plugins>
 
 		<finalName>casenotes-inprocess-service</finalName>
@@ -112,7 +112,7 @@
 			<artifactId>cxf-rt-frontend-jaxws</artifactId>
 			<version>${cxf.version}</version>
 		</dependency>
-		<dependency>
+		<!-- <dependency>
 			<groupId>org.apache.cxf</groupId>
 			<artifactId>cxf-rt-transports-http</artifactId>
 			<version>${cxf.version}</version>
@@ -121,7 +121,7 @@
 			 <groupId>org.apache.cxf</groupId>
 			 <artifactId>cxf-rt-ws-security</artifactId>
 			 <version>${cxf.version}</version>
-		 </dependency>
+		 </dependency> -->
 		<dependency>
 		    <groupId>com.oracle</groupId>
 		    <artifactId>ojdbc8</artifactId>

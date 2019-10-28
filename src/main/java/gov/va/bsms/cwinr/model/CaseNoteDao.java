@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import gov.va.bsms.cwinr.exceptions.CaseNotesDaoException;
+import gov.va.bsms.cwinr.exceptions.ConfigurationManagerException;
 import gov.va.bsms.cwinr.exceptions.ConnectionManagerException;
 
 public class CaseNoteDao {
@@ -70,6 +71,8 @@ public class CaseNoteDao {
 			throw new CaseNotesDaoException(e.getMessage(), e);
 		} catch (ConnectionManagerException e) {
 			throw new CaseNotesDaoException(e.getMessage(), e);
+		} catch (ConfigurationManagerException e) {
+			throw new CaseNotesDaoException(e.getMessage(), e);
 		} finally {
 			if(selectCaseNotesForProcessingStmnt!=null) {
 				try {
@@ -113,6 +116,8 @@ public class CaseNoteDao {
 			throw new CaseNotesDaoException(e.getMessage(), e);
 		} catch (ConnectionManagerException e) {
 			ConnectionManager.closeDatabaseObjects(updateErrorTableStmnt, conn);
+			throw new CaseNotesDaoException(e.getMessage(), e);
+		} catch (ConfigurationManagerException e) {
 			throw new CaseNotesDaoException(e.getMessage(), e);
 		}
 
@@ -163,6 +168,8 @@ public class CaseNoteDao {
 		} catch (ConnectionManagerException e) {
 			ConnectionManager.closeDatabaseObjects(updateErrorCaseNoteTableStmnt, conn);
 			throw new CaseNotesDaoException(e.getMessage(), e);
+		} catch (ConfigurationManagerException e) {
+			throw new CaseNotesDaoException(e.getMessage(), e);
 		}
 
 		// iterate through the case notes for update of the TBL_IN_FROM_SARA table
@@ -210,6 +217,8 @@ public class CaseNoteDao {
 			throw new CaseNotesDaoException(e.getMessage(), e);
 		} catch (ConnectionManagerException e) {
 			ConnectionManager.closeDatabaseObjects(updateCaseNoteTableStmnt, conn);
+			throw new CaseNotesDaoException(e.getMessage(), e);
+		} catch (ConfigurationManagerException e) {
 			throw new CaseNotesDaoException(e.getMessage(), e);
 		}
 
@@ -260,6 +269,8 @@ public class CaseNoteDao {
 			throw new CaseNotesDaoException(e.getMessage(), e);
 		} catch (ConnectionManagerException e) {
 			ConnectionManager.closeDatabaseObjects(insertSaraCorpDbXrefTableStmnt, conn);
+			throw new CaseNotesDaoException(e.getMessage(), e);
+		} catch (ConfigurationManagerException e) {
 			throw new CaseNotesDaoException(e.getMessage(), e);
 		}
 

@@ -17,6 +17,7 @@ import org.apache.cxf.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gov.va.bsms.cwinr.exceptions.ConfigurationManagerException;
 import gov.va.bsms.cwinr.model.CaseNote2;
 import gov.va.bsms.cwinr.utils.ConfigurationManager;
 
@@ -36,7 +37,14 @@ public class SoapClient {
 
 	private void sendToBGS(CaseNote2 note, String request) throws IOException {
 		//URL url = new URL(config.getString("bgs-url", "-node"));
-		URL url = new URL(ConfigurationManager.INSTANCE.getResources().getString("bgs-url2"));
+		String bgsUrl= "";
+		try {
+			bgsUrl = ConfigurationManager.INSTANCE.getResources().getString("bgs-url2");
+		} catch (ConfigurationManagerException e) {
+			throw new IOException(e);
+		}		
+		
+		URL url = new URL(bgsUrl);
 		HttpURLConnection con = (HttpURLConnection) url.openConnection();
 		con.setRequestMethod("POST");
 		con.setRequestProperty("Content-Type", "text/xml; charset=utf-8");
@@ -98,14 +106,63 @@ public class SoapClient {
 
 			// Status for Update and Insert
 			String status = getResultTag(note, "jrnStatusTypeCd").toLowerCase();
-			if ((status.equals("i") || status.equals("u")) == false)
-				note.setError("BGS SOAP Service status wrong: " + status + ".");
+			if ("i".equalsIgnoreCase(status)) {
+				String soapCaseDocumentId = getResultTag(note, "caseDcmntId");
+				if(!StringUtils.isEmpty(soapCaseDocumentId)) {
+					note.setCaseDocumentId(soapCaseDocumentId);
+				}
+			} else if("u".equalsIgnoreCase(status)) {
+				// do nothing
+			} else {
+				// else set SOAP error
+				note.setError("BGS SOAP Service status error: " + status + ".");
+			}
 		} catch (IOException e) {
 			note.setError("PRE BGS SOAP Service Error" + e.toString());
 			logger.error(e.getMessage());
 		}
-		logger.info(note.toString());
+
+		//:TODO update casenote with SOAP response
 	}
+	
+
+
+	/*
+	 * public void sendCaseNoteMock(CaseNote2 note) { validate(note);
+	 * 
+	 * try { String template = readFile(update_fn); String request =
+	 * template.replace("<CaseDcmntDTO />", toCaseDcmntDTO(note));
+	 * 
+	 * logger.debug(request);
+	 * 
+	 * // sendToBGS(note, request); note.
+	 * setSoapResult("<S:Envelope xmlns:S=\"http://schemas.xmlsoap.org/soap/envelope/\">\r\n"
+	 * + "<S:Body>\r\n" +
+	 * "<ns2:updateCaseDcmntResponse xmlns:ns2=\"http://cases.services.vetsnet.vba.va.gov/\">\r\n"
+	 * + "<CaseDcmntDTO>\r\n" +
+	 * "<bnftClaimNoteTypeCd>001</bnftClaimNoteTypeCd> \r\n" +
+	 * "<caseDcmntId>3612</caseDcmntId> \r\n" + "<caseId>65858</caseId> \r\n" +
+	 * "<dcmntTxt>updating a note</dcmntTxt> \r\n" +
+	 * "<jrnDt>2019-07-11T15:23:59-05:00</jrnDt> \r\n" +
+	 * "<jrnLctnId>281</jrnLctnId> \r\n" + "<jrnObjId>VBMS</jrnObjId> \r\n" +
+	 * "<jrnStatusTypeCd>I</jrnStatusTypeCd> \r\n" +
+	 * "<jrnUserId>281CEASL</jrnUserId> \r\n" +
+	 * "<modifdDt>2019-07-11T15:23:59-05:00</modifdDt > \r\n" +
+	 * "</CaseDcmntDTO>\r\n" + "</ns2:updateCaseDcmntResponse>\r\n" +
+	 * "</S:Body>\r\n" + "</S:Envelope>\r\n");
+	 * 
+	 * // Status for Update and Insert String status = getResultTag(note,
+	 * "jrnStatusTypeCd").toLowerCase(); if ("i".equalsIgnoreCase(status)) { String
+	 * soapCaseDocumentId = getResultTag(note, "caseDcmntId");
+	 * if(!StringUtils.isEmpty(soapCaseDocumentId)) {
+	 * note.setCaseDocumentId(Integer.toString(getRandonInt())); } } else
+	 * if("u".equalsIgnoreCase(status)) { // do nothing } else { // else set SOAP
+	 * error note.setError("BGS SOAP Service status error: " + status + "."); } }
+	 * catch (IOException e) { note.setError("PRE BGS SOAP Service Error" +
+	 * e.toString()); logger.error(e.getMessage()); }
+	 * 
+	 * //:TODO update casenote with SOAP response }
+	 */
 	
 /**
  * THESE ARE METHODS FROM CaseNote obj ---------------------------------------------
@@ -183,6 +240,13 @@ public class SoapClient {
 	private String now() {
 		DateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss");
 		return dateFormat.format(new Date());
+	}
+	
+	private Integer getRandonInt() {
+		double randomDouble = Math.random();
+		randomDouble = randomDouble * 1008 + 1;
+		int randomInt = (int) randomDouble;
+		return randomInt;
 	}
 	
 }

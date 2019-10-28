@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import gov.va.bsms.cwinr.exceptions.CaseNotesDaoException;
+import gov.va.bsms.cwinr.exceptions.ConfigurationManagerException;
 import gov.va.bsms.cwinr.model.CaseNoteAggregator;
 import gov.va.bsms.cwinr.model.CaseNoteDao;
 import gov.va.bsms.cwinr.soap.SoapDao;
@@ -12,11 +13,19 @@ import gov.va.bsms.cwinr.utils.ConfigurationManager;
 public class Inprocess {
 	private static Logger logger = LoggerFactory.getLogger(Inprocess.class);
 
-	public static void main(String[] args) {
-		logger.info("Startup of application v.{}\n", ConfigurationManager.INSTANCE.getResources().getString("version"));
-		
+	public static void main(String[] args) {		
 		// initialize start time
         long lStartTime = System.nanoTime();
+        
+		String version = "";
+		try {
+			version = ConfigurationManager.INSTANCE.getResources().getString("version");
+		} catch (ConfigurationManagerException e1) {
+			logger.error("Startup of application failed due to no configuration file found.");
+			System.exit(1);
+		}
+
+		logger.info("Startup of application v.{}\n", version);
 		
 		// create the case note DAO to interact with the AWS Oracle Cloud instance
 		CaseNoteDao cnDao = new CaseNoteDao();
@@ -77,7 +86,12 @@ public class Inprocess {
         long output = lEndTime - lStartTime;
 		logger.info("Total processing time was {} milliseconds for {} case notes.\n", (output / 1000000), caseNoteAggregator.getCaseNotesForProcessing().size());
 
-		logger.info("Shutdown of JAVA Application Version {}", ConfigurationManager.INSTANCE.getResources().getString("version"));
+		try {
+			logger.info("Shutdown of JAVA Application Version {}", ConfigurationManager.INSTANCE.getResources().getString("version"));
+		} catch (ConfigurationManagerException e) {
+			logger.info("Shutdown of application failed due to no configuration file found.");
+			System.exit(1);
+		}
 	}
 
 }
