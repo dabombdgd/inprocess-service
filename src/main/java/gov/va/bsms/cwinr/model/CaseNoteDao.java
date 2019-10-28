@@ -58,7 +58,7 @@ public class CaseNoteDao {
 				tempCaseNote.setProcessStatus(rs.getString("PROCESS_STATUS"));
 				tempCaseNote.setCaseNoteId(rs.getString("CASE_NOTE_ID"));
 				tempCaseNote.setCaseId(rs.getString("CASE_ID"));
-				tempCaseNote.setBenefitClaimNoyeTypeCd(rs.getString("BNFT_CLAIM_NOTE_TYPE_CD"));
+				tempCaseNote.setBenefitClaimNoteTypeCd(rs.getString("BNFT_CLAIM_NOTE_TYPE_CD"));
 				tempCaseNote.setAdditional3(rs.getString("ADDITIONAL3"));
 				tempCaseNote.setCaseDocumentId(rs.getString("CASE_DCMNT_ID"));
 				tempCaseNote.setNvlCD(rs.getString("NVL_CD"));
@@ -102,7 +102,7 @@ public class CaseNoteDao {
 		Connection conn = null;
 		String insertErrorLoggingTableSQL = "insert into log_error (ERROR_ID,ERROR_DATE,CLIENT_ID,"
 				+ "IN_FROM_SARA_ID,TYPE,ERROR,ERROR_THREAD,SENT_TO_CENTRAL,SENT_DATE)"
-				+ "values (LOG_ERROR_SEQ.NEXTVAL,SYSDATE,?,?,'IN','CASE_ID NOT FOUND','','',SYSDATE)";
+				+ "values (LOG_ERROR_SEQ.NEXTVAL,SYSDATE,?,?,'IN',?,'','',SYSDATE)";
 		
 		// establish connection to Oracle database
 		try {
@@ -122,6 +122,7 @@ public class CaseNoteDao {
 				if(updateErrorTableStmnt != null && conn != null) {
 					updateErrorTableStmnt.setString(1,erroredCaseNote.getClientId());
 					updateErrorTableStmnt.setInt(2,Integer.parseInt(erroredCaseNote.getInFromSaraId()));
+					updateErrorTableStmnt.setString(3,erroredCaseNote.getError());
 					updateErrorTableStmnt.executeUpdate();
 					conn.commit();
 				} else {

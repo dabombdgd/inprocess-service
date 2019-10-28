@@ -13,6 +13,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Scanner;
 
+import org.apache.cxf.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,21 +22,21 @@ import gov.va.bsms.cwinr.utils.ConfigurationManager;
 
 /*  BGS SOAP client interface */
 
-public class SOAPClient {
-	static Logger LOGGER = LoggerFactory.getLogger(SOAPClient.class);
+public class SoapClient {
+	static Logger logger = LoggerFactory.getLogger(SoapClient.class);
 	
 	private static final String update_fn = "template.xml";
 	private static final String out_fn = "test/soap.xml";
 	private static final String res_fn = "test/response.xml";
 	private static final String in_fn = "test/case_notes.txt";
 
-	public SOAPClient() {
+	public SoapClient() {
 		// do nothing
 	}
 
 	private void sendToBGS(CaseNote2 note, String request) throws IOException {
 		//URL url = new URL(config.getString("bgs-url", "-node"));
-		URL url = new URL(ConfigurationManager.INSTANCE.getResources().getString("bgs-url-node"));
+		URL url = new URL(ConfigurationManager.INSTANCE.getResources().getString("bgs-url2"));
 		HttpURLConnection con = (HttpURLConnection) url.openConnection();
 		con.setRequestMethod("POST");
 		con.setRequestProperty("Content-Type", "text/xml; charset=utf-8");
@@ -47,8 +48,8 @@ public class SOAPClient {
 
 		String responseStatus = con.getResponseMessage(); // "OK" or not
 		if (!responseStatus.equalsIgnoreCase("OK")) {
-			LOGGER.info("Wrong BGS status: " + responseStatus); // Delete this line
-			setError(note, "Wrong BGS status: " + responseStatus);
+			logger.warn("Wrong BGS status: " + responseStatus); // Delete this line
+			note.setError("BGS SOAP Service invalid status: " + responseStatus);
 		}
 
 		BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
@@ -89,82 +90,80 @@ public class SOAPClient {
 
 		try {
 			String template = readFile(update_fn);
-			String request = template.replace("<CaseDcmntDTO/>", toCaseDcmntDTO(note));
+			String request = template.replace("<CaseDcmntDTO />", toCaseDcmntDTO(note));
+			
+			logger.debug(request);
 
 			sendToBGS(note, request);
 
 			// Status for Update and Insert
 			String status = getResultTag(note, "jrnStatusTypeCd").toLowerCase();
-			if ((status.equals("i") | status.equals("u")) == false)
-				note.setSoapError("BGS status wrong: " + status + ".");
+			if ((status.equals("i") || status.equals("u")) == false)
+				note.setError("BGS SOAP Service status wrong: " + status + ".");
 		} catch (IOException e) {
-			note.setSoapError("Error" + e.toString());
-			e.printStackTrace();
+			note.setError("PRE BGS SOAP Service Error" + e.toString());
+			logger.error(e.getMessage());
 		}
-		LOGGER.info(note.toString());
+		logger.info(note.toString());
 	}
-
-	/* This code will be moved to a unit test someday */
-	/*
-	 * Read notes from file. The case notes are one per line. They can not have \n
-	 * new lines in this test.
-	 */
-	/*
-	 * public void testCaseNotes() { try { if (!(new File(in_fn).exists())) return;
-	 * Scanner scan = new Scanner(new File(in_fn));
-	 * 
-	 * while (scan.hasNextLine()) { String[] f = scan.nextLine().split(" ", 5); for
-	 * (int i = 0; i < f.length; i++) if ("''".equals(f[i])) f[i] = ""; // two
-	 * single quotes is the empty string CaseNote note = new CaseNote(f[0], f[1],
-	 * f[2], f[3], f[4]); javaService.receive(note); } } catch (IOException e) {
-	 * e.printStackTrace(); } }
-	 */
 	
 /**
  * THESE ARE METHODS FROM CaseNote obj ---------------------------------------------
  */
 	
 	private String xml_escape(String s) {
-		s = s.replaceAll("&", "&amp;");
-		s = s.replaceAll("<", "&lt;");
-		s = s.replaceAll(">", "&gt;");
-		s = s.replaceAll("'", "&apos;");
-		s = s.replaceAll("\"", "&quot;");
-		LOGGER.debug("Escaped XML: {}", s);
+		if(!StringUtils.isEmpty(s)) {
+			s = s.replaceAll("&", "&amp;");
+			s = s.replaceAll("<", "&lt;");
+			s = s.replaceAll(">", "&gt;");
+			s = s.replaceAll("'", "&apos;");
+			s = s.replaceAll("\"", "&quot;");
+		} else {
+			s= "No data available.";
+		}
+		logger.debug("Escaped XML: {}", s);
 		return s;
 	}
 	
 	public String getResultTag(CaseNote2 casenote, String tag) {
+		String returnVal = "";
 		try {
-			String s = casenote.getSoapResult().split("<" + tag + ">")[1];
-			return s.split("</" + tag + ">")[0];
+			// if casenote.getSoapResult() is not empty or null
+			if(!StringUtils.isEmpty(casenote.getSoapResult())) {
+				String s = casenote.getSoapResult().split("<" + tag + ">")[1];
+				// if String s is not empty or null
+				if(!StringUtils.isEmpty(s)) {
+					returnVal =  s.split("</" + tag + ">")[0];
+				}
+			}
 		} catch (Exception e) { //TODO: refactor to not capture general exception
-			casenote.setSoapError("SOAP Fault Exception missing tag " + tag + " in result");
-			LOGGER.error("Result Tag Error: {}", tag);
-			return "";
+			casenote.setError("PRE BGS SOAP Service Fault Exception missing tag " + tag + " in result");
+			logger.error("PRE BGS SOAP Service Result Tag Error: {} does not exist or is empty.", tag);
+			returnVal = "";
 		}
+		
+		return returnVal;
 	}
 
 	private String tag(String tag, String value) {
-		LOGGER.debug("SOAP tag: {}", tag);
+		logger.debug("SOAP tag: {}", tag);
 		return ("\n<" + tag + ">" + xml_escape(value) + "</" + tag + ">");
 	}
 
 	private String toCaseDcmntDTO(CaseNote2 caseNote) { // Note JAXB Marshaller
 		String xml = "<CaseDcmntDTO>";
-		//if (isValid(this.caseDcmntId))
 		if (isValid(caseNote.getCaseDocumentId()))
 			xml += tag("caseDcmntId", caseNote.getCaseDocumentId());
 		xml += tag("caseId", caseNote.getCaseId());
 		xml += tag("modifdDt", caseNote.getModifiedDate());
 		xml += tag("dcmntTxt", caseNote.getCaseNote());
 		xml += "\n</CaseDcmntDTO>";
-		LOGGER.debug("Caee Note SOAP Request: {}", xml);
+
 		return xml;
 	}
 
 	public void validate(CaseNote2 caseNote) {
-		valid(caseNote, "bnftClaimNoteTypeCd", caseNote.getBenefitClaimNoyeTypeCd());
+		valid(caseNote, "bnftClaimNoteTypeCd", caseNote.getBenefitClaimNoteTypeCd());
 		valid(caseNote, "caseId", caseNote.getCaseId());
 		valid(caseNote, "modifdDt", caseNote.getModifiedDate());
 		valid(caseNote, "dcmntTxt", caseNote.getCaseNote());
@@ -173,25 +172,17 @@ public class SOAPClient {
 	}
 
 	private boolean isValid(String s) {
-		return ((s != null) & (s.length() > 0));
+		return (!StringUtils.isEmpty(s));
 	}
 
 	private void valid(CaseNote2 caseNote, String f, String v) {
 		if (!isValid(v))
-			caseNote.setSoapError("Exception invalid " + f + " value");
+			caseNote.setError("PRE BGS SOAP Exception invalid " + f + " value");
 	}
 
 	private String now() {
 		DateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss");
 		return dateFormat.format(new Date());
 	}
-
-	public void setError(CaseNote2 caseNote, String str) {
-		LOGGER.error("Error string: {}", str);
-		caseNote.setSoapError((caseNote.getSoapError() == null) ? str : (str + " " + caseNote.getSoapError()));
-	}
 	
 }
-
-//https://stackoverflow.com/questions/22068864/how-to-generate-soap-request-and-get-response-in-java-coding
-//https://chillyfacts.com/java-send-soap-xml-request-read-response/            }

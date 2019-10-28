@@ -11,14 +11,14 @@ public class CaseNote2 {
 	private String caseNoteId;
 	private String processStatus;
 	private String caseId;
-	private String benefitClaimNoyeTypeCd;
+	private String benefitClaimNoteTypeCd;
 	private String additional3;
 	private String caseDocumentId;
 	private String nvlCD;
 	
 	// SOAP variables
 	String soapResult;
-	String soapError;
+	String error;
 	String modifiedDate;
 
 	private boolean update = true;
@@ -84,15 +84,16 @@ public class CaseNote2 {
 		// processed by the BGS SOAP service call.
 		if(StringUtils.isEmpty(caseId) || "null".equalsIgnoreCase(caseId)) {
 			setWithDBError(true);
+			setError("CASE_ID NOT FOUND");
 		}
 	}
 
-	public String getBenefitClaimNoyeTypeCd() {
-		return benefitClaimNoyeTypeCd;
+	public String getBenefitClaimNoteTypeCd() {
+		return benefitClaimNoteTypeCd;
 	}
 
-	public void setBenefitClaimNoyeTypeCd(String benefitClaimNoyeTypeCd) {
-		this.benefitClaimNoyeTypeCd = benefitClaimNoyeTypeCd;
+	public void setBenefitClaimNoteTypeCd(String benefitClaimNoteTypeCd) {
+		this.benefitClaimNoteTypeCd = benefitClaimNoteTypeCd;
 	}
 
 	public String getAdditional3() {
@@ -133,12 +134,15 @@ public class CaseNote2 {
 		this.soapResult = soapResult;
 	}
 
-	public String getSoapError() {
-		return soapError;
+	public String getError() {
+		return error;
 	}
 
-	public void setSoapError(String soapError) {
-		this.soapError = soapError;
+	public void setError(String error) {
+		this.error = error;
+		
+		// set 
+		setWithBGSError(true);
 	}
 
 	public String getModifiedDate() {

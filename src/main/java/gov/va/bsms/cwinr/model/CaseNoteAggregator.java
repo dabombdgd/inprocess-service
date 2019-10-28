@@ -87,7 +87,7 @@ public class CaseNoteAggregator {
 		List<CaseNote2> returnVal = new ArrayList<>();
 
 		for (CaseNote2 tempCaseNote : this.caseNotesForProcessing) {
-			if (tempCaseNote.isWithBGSError()) {
+			if (tempCaseNote.isWithBGSError() && !tempCaseNote.isWithDBError()) {
 				returnVal.add(tempCaseNote);
 			}
 		}

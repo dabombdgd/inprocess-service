@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import gov.va.bsms.cwinr.exceptions.CaseNotesDaoException;
 import gov.va.bsms.cwinr.model.CaseNoteAggregator;
 import gov.va.bsms.cwinr.model.CaseNoteDao;
+import gov.va.bsms.cwinr.soap.SoapDao;
 import gov.va.bsms.cwinr.utils.ConfigurationManager;
 
 public class Inprocess {
@@ -42,7 +43,8 @@ public class Inprocess {
 		
 		// call the SOAP client DAO?
 		// ------------------------------------------------------
-		//:TODO create the BGS SOAP Service DAO processing call
+		SoapDao soapDao = new SoapDao();
+		soapDao.processCaseNotesWithBgsServiceMvp(caseNoteAggregator.getCaseNotesForProcessing());
 		// ------------------------------------------------------
 
 		// log all of the CaseNotes with SOAP errors to the log_error table
