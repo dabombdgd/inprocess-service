@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import gov.va.bsms.cwinr.exceptions.CaseNotesDaoException;
 import gov.va.bsms.cwinr.exceptions.ConfigurationManagerException;
+import gov.va.bsms.cwinr.exceptions.SoapClientException;
 import gov.va.bsms.cwinr.model.CaseNoteAggregator;
 import gov.va.bsms.cwinr.model.CaseNoteDao;
 import gov.va.bsms.cwinr.soap.SoapDao;

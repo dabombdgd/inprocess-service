@@ -3,10 +3,10 @@ package gov.va.bsms.cwinr.soap;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -18,58 +18,113 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import gov.va.bsms.cwinr.exceptions.ConfigurationManagerException;
+import gov.va.bsms.cwinr.exceptions.SoapClientException;
 import gov.va.bsms.cwinr.model.CaseNote2;
 import gov.va.bsms.cwinr.utils.ConfigurationManager;
 
 /*  BGS SOAP client interface */
 
 public class SoapClient {
+	private static final String PRE_BGS_SOAP_SERVICE_ERROR = "PRE BGS SOAP Service Error";
+
+	private static final String ERROR_WITH_SOAP_SERVICE = "Error with SOAP service.";
+
+	private static final String ERROR_WITH_CONFIGURATION_MANAGER = "Error with Configuration Manager.";
+
+	private static final String BGS_SOAP_SERVICE_INVALID_STATUS = "BGS SOAP Service invalid status: ";
+
 	static Logger logger = LoggerFactory.getLogger(SoapClient.class);
 	
 	private static final String update_fn = "template.xml";
-	private static final String out_fn = "test/soap.xml";
-	private static final String res_fn = "test/response.xml";
-	private static final String in_fn = "test/case_notes.txt";
 
 	public SoapClient() {
 		// do nothing
 	}
 
-	private void sendToBGS(CaseNote2 note, String request) throws IOException {
-		//URL url = new URL(config.getString("bgs-url", "-node"));
+	private void sendToBGS(CaseNote2 note, String request) throws SoapClientException {
 		String bgsUrl= "";
+		URL url = null;
+		HttpURLConnection con = null;
+		DataOutputStream wr = null;
+		
 		try {
 			bgsUrl = ConfigurationManager.INSTANCE.getResources().getString("bgs-url2");
 		} catch (ConfigurationManagerException e) {
-			throw new IOException(e);
-		}		
+			note.setError(PRE_BGS_SOAP_SERVICE_ERROR + e.toString());
+			throw new SoapClientException(ERROR_WITH_CONFIGURATION_MANAGER, e);
+		}
 		
-		URL url = new URL(bgsUrl);
-		HttpURLConnection con = (HttpURLConnection) url.openConnection();
-		con.setRequestMethod("POST");
-		con.setRequestProperty("Content-Type", "text/xml; charset=utf-8");
-		con.setDoOutput(true);
-		DataOutputStream wr = new DataOutputStream(con.getOutputStream());
-		wr.writeBytes(request);
-		wr.flush();
-		wr.close();
+		try {
+			url = new URL(bgsUrl);
+			con = (HttpURLConnection) url.openConnection();
+			con.setRequestMethod("POST");
+			con.setRequestProperty("Content-Type", "text/xml; charset=utf-8");
+			con.setDoOutput(true);
+			wr = new DataOutputStream(con.getOutputStream());
+			wr.writeBytes(request);
+		} catch(MalformedURLException e) {
+			note.setError(PRE_BGS_SOAP_SERVICE_ERROR + e.toString());
+			throw new SoapClientException(ERROR_WITH_SOAP_SERVICE, e);
+		} catch (IOException e) {
+			note.setError(PRE_BGS_SOAP_SERVICE_ERROR + e.toString());
+			throw new SoapClientException(ERROR_WITH_SOAP_SERVICE, e);
+		} finally {
+			if(wr != null) {
+				try {
+					wr.flush();
+				} catch (IOException e) {
+					// do nothing
+				}
+				try {
+					wr.close();
+				} catch (IOException e) {
+					// do nothing
+				}
+			}
+		}
+		
+		String responseStatus = "";
 
-		String responseStatus = con.getResponseMessage(); // "OK" or not
+		try {
+			// "OK" or not
+			responseStatus = con.getResponseMessage();
+		} catch (IOException e) {
+			note.setError(PRE_BGS_SOAP_SERVICE_ERROR + e.toString());
+			throw new SoapClientException(ERROR_WITH_SOAP_SERVICE, e);
+		} 
+		
 		if (!responseStatus.equalsIgnoreCase("OK")) {
-			logger.warn("Wrong BGS status: " + responseStatus); // Delete this line
-			note.setError("BGS SOAP Service invalid status: " + responseStatus);
+			logger.warn(BGS_SOAP_SERVICE_INVALID_STATUS + responseStatus); // Delete this line
+			note.setError(BGS_SOAP_SERVICE_INVALID_STATUS + responseStatus);
 		}
+		
+		BufferedReader in = null;
+		StringBuilder response = null;
 
-		BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-		StringBuilder response = new StringBuilder();
-		String inputLine;
-		while ((inputLine = in.readLine()) != null) {
-			response.append(inputLine);
+		try {
+			in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+			response = new StringBuilder();
+			String inputLine;
+			while ((inputLine = in.readLine()) != null) {
+				response.append(inputLine);
+			}
+		} catch (IOException e) {
+			note.setError(PRE_BGS_SOAP_SERVICE_ERROR + e.toString());
+			throw new SoapClientException(ERROR_WITH_SOAP_SERVICE, e);
+		} finally {
+			if(in != null) {
+				try {
+					in.close();
+				} catch (IOException e) {
+					// do nothing
+				}
+			}
 		}
-		in.close();
 		
 		// set the SOAP result from BGS
-		note.setSoapResult(response.toString());
+		if(response != null) {
+			note.setSoapResult(response.toString());
+		}
 	}
 
 	private String readFile(String fn) throws IOException {
@@ -80,20 +135,7 @@ public class SoapClient {
 		return text;
 	}
 
-	private void writeFile(String fn, String data) throws IOException {
-		FileWriter out = new FileWriter(new File(fn));
-		out.write(data);
-		out.close();
-	}
-
-	private void sendToFile(CaseNote2 note, String request) throws IOException {
-		//:TODO WHY?
-		writeFile(out_fn, request); // write to fake output file
-		//:TODO WHY?
-		note.setSoapResult(readFile(res_fn)); // read from fake input file // if (new File(res_fn).exists())
-	}
-
-	public void sendCaseNote(CaseNote2 note) {
+	public void sendCaseNote(CaseNote2 note) throws SoapClientException {
 		validate(note);
 
 		try {
@@ -115,54 +157,15 @@ public class SoapClient {
 				// do nothing
 			} else {
 				// else set SOAP error
-				note.setError("BGS SOAP Service status error: " + status + ".");
+				note.setError("PRE BGS SOAP Service status error: " + status + ".");
 			}
 		} catch (IOException e) {
-			note.setError("PRE BGS SOAP Service Error" + e.toString());
+			note.setError(PRE_BGS_SOAP_SERVICE_ERROR + e.toString());
 			logger.error(e.getMessage());
 		}
 
 		//:TODO update casenote with SOAP response
 	}
-	
-
-
-	/*
-	 * public void sendCaseNoteMock(CaseNote2 note) { validate(note);
-	 * 
-	 * try { String template = readFile(update_fn); String request =
-	 * template.replace("<CaseDcmntDTO />", toCaseDcmntDTO(note));
-	 * 
-	 * logger.debug(request);
-	 * 
-	 * // sendToBGS(note, request); note.
-	 * setSoapResult("<S:Envelope xmlns:S=\"http://schemas.xmlsoap.org/soap/envelope/\">\r\n"
-	 * + "<S:Body>\r\n" +
-	 * "<ns2:updateCaseDcmntResponse xmlns:ns2=\"http://cases.services.vetsnet.vba.va.gov/\">\r\n"
-	 * + "<CaseDcmntDTO>\r\n" +
-	 * "<bnftClaimNoteTypeCd>001</bnftClaimNoteTypeCd> \r\n" +
-	 * "<caseDcmntId>3612</caseDcmntId> \r\n" + "<caseId>65858</caseId> \r\n" +
-	 * "<dcmntTxt>updating a note</dcmntTxt> \r\n" +
-	 * "<jrnDt>2019-07-11T15:23:59-05:00</jrnDt> \r\n" +
-	 * "<jrnLctnId>281</jrnLctnId> \r\n" + "<jrnObjId>VBMS</jrnObjId> \r\n" +
-	 * "<jrnStatusTypeCd>I</jrnStatusTypeCd> \r\n" +
-	 * "<jrnUserId>281CEASL</jrnUserId> \r\n" +
-	 * "<modifdDt>2019-07-11T15:23:59-05:00</modifdDt > \r\n" +
-	 * "</CaseDcmntDTO>\r\n" + "</ns2:updateCaseDcmntResponse>\r\n" +
-	 * "</S:Body>\r\n" + "</S:Envelope>\r\n");
-	 * 
-	 * // Status for Update and Insert String status = getResultTag(note,
-	 * "jrnStatusTypeCd").toLowerCase(); if ("i".equalsIgnoreCase(status)) { String
-	 * soapCaseDocumentId = getResultTag(note, "caseDcmntId");
-	 * if(!StringUtils.isEmpty(soapCaseDocumentId)) {
-	 * note.setCaseDocumentId(Integer.toString(getRandonInt())); } } else
-	 * if("u".equalsIgnoreCase(status)) { // do nothing } else { // else set SOAP
-	 * error note.setError("BGS SOAP Service status error: " + status + "."); } }
-	 * catch (IOException e) { note.setError("PRE BGS SOAP Service Error" +
-	 * e.toString()); logger.error(e.getMessage()); }
-	 * 
-	 * //:TODO update casenote with SOAP response }
-	 */
 	
 /**
  * THESE ARE METHODS FROM CaseNote obj ---------------------------------------------
@@ -240,13 +243,6 @@ public class SoapClient {
 	private String now() {
 		DateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss");
 		return dateFormat.format(new Date());
-	}
-	
-	private Integer getRandonInt() {
-		double randomDouble = Math.random();
-		randomDouble = randomDouble * 1008 + 1;
-		int randomInt = (int) randomDouble;
-		return randomInt;
 	}
 	
 }

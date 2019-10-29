@@ -1,15 +1,13 @@
 package gov.va.bsms.cwinr.soap;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.List;
 
 import javax.xml.namespace.QName;
-import javax.xml.ws.Holder;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gov.va.bsms.cwinr.exceptions.SoapClientException;
 import gov.va.bsms.cwinr.model.CaseNote2;
 /*import gov.va.vba.vetsnet.services.cases.CaseDcmntDTO;
 import gov.va.vba.vetsnet.services.cases.CaseWebService;
@@ -24,6 +22,7 @@ public class SoapDao {
 	    "CaseWebService");
 	
 	public SoapDao() {
+		// do nothing
 	}	
 
 	public void processCaseNotesWithBgsServiceMvp(List<CaseNote2> caseNotesForBgsprocessing) {
@@ -32,7 +31,11 @@ public class SoapDao {
 		for(CaseNote2 tempCaseNote : caseNotesForBgsprocessing) {
 			// process case notes w/o db error
 			if(!tempCaseNote.isWithDBError()) {
-				soapClient.sendCaseNote(tempCaseNote);
+				try {
+					soapClient.sendCaseNote(tempCaseNote);
+				} catch (SoapClientException e) {
+					tempCaseNote.setWithBGSError(true);
+				}
 			}
 		}
 	}
