@@ -38,7 +38,7 @@ public class SoapClient {
 	private static final String update_fn = "template.xml";
 
 	public SoapClient() {
-		// do nothing
+		// do nothing for nothing
 	}
 
 	private void sendToBGS(CaseNote2 note, String request) throws SoapClientException {
