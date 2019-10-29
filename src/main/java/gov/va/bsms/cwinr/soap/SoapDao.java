@@ -34,7 +34,7 @@ public class SoapDao {
 				try {
 					soapClient.sendCaseNote(tempCaseNote);
 				} catch (SoapClientException e) {
-					tempCaseNote.setWithBGSError(true);
+					tempCaseNote.setError(e.getMessage());
 				}
 			}
 		}
