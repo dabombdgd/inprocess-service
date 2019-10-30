@@ -83,9 +83,7 @@ public class CaseNoteDao {
 		} catch (SQLException e) {
 			logger.error(e.getMessage());
 			throw new CaseNotesDaoException(e.getMessage(), e);
-		} catch (ConnectionManagerException e) {
-			throw new CaseNotesDaoException(e.getMessage(), e);
-		} catch (ConfigurationManagerException e) {
+		} catch (ConnectionManagerException|ConfigurationManagerException e) {
 			throw new CaseNotesDaoException(e.getMessage(), e);
 		} finally {
 			if(selectCaseNotesForProcessingStmnt!=null) {
@@ -126,10 +124,7 @@ public class CaseNoteDao {
 			logger.error(e.getMessage());
 			ConnectionManager.closeDatabaseObjects(updateErrorTableStmnt, conn);
 			throw new CaseNotesDaoException(e.getMessage(), e);
-		} catch (ConnectionManagerException e) {
-			ConnectionManager.closeDatabaseObjects(updateErrorTableStmnt, conn);
-			throw new CaseNotesDaoException(e.getMessage(), e);
-		} catch (ConfigurationManagerException e) {
+		} catch (ConnectionManagerException|ConfigurationManagerException e) {
 			ConnectionManager.closeDatabaseObjects(updateErrorTableStmnt, conn);
 			throw new CaseNotesDaoException(e.getMessage(), e);
 		}

@@ -1,29 +1,25 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>gov.va.bsms.cwinrs</groupId>
-  <artifactId>eva-inprocess-service</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
-  <name>inprocess-service</name>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>gov.va.bsms.cwinrs</groupId>
+	<artifactId>eva-inprocess-service</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>inprocess-service</name>
 
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<cxf.version>3.3.3</cxf.version>
-		<sonar.exclusions>**/gov/va/bsms/cwinr/eva/*, **/generated/**/*</sonar.exclusions>
-		<sonar.coverage.exclusions>**/gov/va/bsms/cwinr/eva/*, **/generated/**/*</sonar.coverage.exclusions>
-	</properties>
 	<build>
-	  <resources>
-	    <resource>
-	      <directory>src/main/resources</directory>
-	      <includes>
-	        <include>eVA.config</include>
-	        <include>eva.properties</include>
-	        <include>log4j.properties</include>
-	      </includes>
-	      <filtering>true</filtering>
-	    </resource>
-	  </resources>
-	
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<includes>
+					<include>eVA.config</include>
+					<include>eva.properties</include>
+					<include>log4j.properties</include>
+				</includes>
+				<filtering>true</filtering>
+			</resource>
+		</resources>
+
 		<plugins>
 			<!-- download source code in Eclipse, best practice -->
 			<plugin>
@@ -59,48 +55,88 @@
 					</descriptorRefs>
 					<!-- MainClass in mainfest make a executable jar -->
 					<archive>
-					  <manifest>
-						<mainClass>gov.va.bsms.cwinr.startup.Inprocess</mainClass>
-					  </manifest>
+						<manifest>
+							<mainClass>gov.va.bsms.cwinr.startup.Inprocess</mainClass>
+						</manifest>
 					</archive>
 
 				</configuration>
 				<executions>
-				  <execution>
-					<id>make-assembly</id>
-                                        <!-- bind to the packaging phase -->
-					<phase>package</phase> 
-					<goals>
-						<goal>single</goal>
-					</goals>
-				  </execution>
-				</executions>
-			</plugin>
-			
-			<!-- Apache CXF SOAP Client   -->
-			<!-- <plugin>
-				<groupId>org.apache.cxf</groupId>
-				<artifactId>cxf-codegen-plugin</artifactId>
-				<version>${cxf.version}</version>
-				<executions>
 					<execution>
-						<id>generate-sources</id>
-						<phase>generate-sources</phase>
-						<configuration>
-							<sourceRoot>${basedir}/src/generated</sourceRoot>
-							<wsdlOptions>
-								<wsdlOption>
-									<wsdl>${basedir}/WSDL/CaseWebService.wsdl</wsdl>
-									<extendedSoapHeaders>true</extendedSoapHeaders>
-								</wsdlOption>
-							</wsdlOptions>
-						</configuration>
+						<id>make-assembly</id>
+						<!-- bind to the packaging phase -->
+						<phase>package</phase>
 						<goals>
-							<goal>wsdl2java</goal>
+							<goal>single</goal>
 						</goals>
 					</execution>
 				</executions>
-			</plugin> -->
+			</plugin>
+			
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<properties>
+						<property>
+							<name>junit</name>
+							<value>true</value>
+						</property>
+					</properties>
+				</configuration>
+			</plugin>
+
+			<!-- JaCoCo for SonarQube Code COverage -->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.8.5</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>jacoco-report</id>
+						<phase>test</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+					<!-- Add this checking -->
+					<execution>
+						<id>jacoco-check</id>
+						<goals>
+							<goal>check</goal>
+						</goals>
+						<configuration>
+							<rules>
+								<rule>
+									<element>PACKAGE</element>
+									<limits>
+										<limit>
+											<counter>LINE</counter>
+											<value>COVEREDRATIO</value>
+											<minimum>0.0</minimum>
+										</limit>
+									</limits>
+								</rule>
+							</rules>
+						</configuration>
+					</execution>
+
+				</executions>
+			</plugin>
+
+			<!-- Apache CXF SOAP Client -->
+			<!-- <plugin> <groupId>org.apache.cxf</groupId> <artifactId>cxf-codegen-plugin</artifactId> 
+				<version>${cxf.version}</version> <executions> <execution> <id>generate-sources</id> 
+				<phase>generate-sources</phase> <configuration> <sourceRoot>${basedir}/src/generated</sourceRoot> 
+				<wsdlOptions> <wsdlOption> <wsdl>${basedir}/WSDL/CaseWebService.wsdl</wsdl> 
+				<extendedSoapHeaders>true</extendedSoapHeaders> </wsdlOption> </wsdlOptions> 
+				</configuration> <goals> <goal>wsdl2java</goal> </goals> </execution> </executions> 
+				</plugin> -->
 		</plugins>
 
 		<finalName>casenotes-inprocess-service</finalName>
@@ -112,31 +148,61 @@
 			<artifactId>cxf-rt-frontend-jaxws</artifactId>
 			<version>${cxf.version}</version>
 		</dependency>
-		<!-- <dependency>
-			<groupId>org.apache.cxf</groupId>
-			<artifactId>cxf-rt-transports-http</artifactId>
-			<version>${cxf.version}</version>
-		</dependency>
-		 <dependency>
-			 <groupId>org.apache.cxf</groupId>
-			 <artifactId>cxf-rt-ws-security</artifactId>
-			 <version>${cxf.version}</version>
-		 </dependency> -->
+		<!-- <dependency> <groupId>org.apache.cxf</groupId> <artifactId>cxf-rt-transports-http</artifactId> 
+			<version>${cxf.version}</version> </dependency> <dependency> <groupId>org.apache.cxf</groupId> 
+			<artifactId>cxf-rt-ws-security</artifactId> <version>${cxf.version}</version> 
+			</dependency> -->
 		<dependency>
-		    <groupId>com.oracle</groupId>
-		    <artifactId>ojdbc8</artifactId>
-		    <version>19.3</version>
+			<groupId>com.oracle</groupId>
+			<artifactId>ojdbc8</artifactId>
+			<version>19.3</version>
 		</dependency>
-		 <dependency>
+		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
 			<version>1.7.5</version>
 		</dependency>
 		<dependency>
-		    <groupId>junit</groupId>
-		    <artifactId>junit</artifactId>
-		    <version>4.12</version>
-		    <scope>test</scope>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.12</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<version>${mockito.version}</version>
+			<scope>test</scope>
+		</dependency><!-- PowerMock TestNG Module -->
+		<dependency>
+			<groupId>org.powermock</groupId>
+			<artifactId>powermock-module-testng</artifactId>
+			<version>${powermock.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<!-- PowerMock JUnit 4.4+ Module -->
+		<dependency>
+			<groupId>org.powermock</groupId>
+			<artifactId>powermock-module-junit4</artifactId>
+			<version>${powermock.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<!-- PowerMock Mockito2 API -->
+		<dependency>
+			<groupId>org.powermock</groupId>
+			<artifactId>powermock-api-mockito2</artifactId>
+			<version>${powermock.version}</version>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<cxf.version>3.3.3</cxf.version>
+		<mockito.version>3.1.0</mockito.version>
+		<powermock.version>2.0.4</powermock.version>
+		<sonar.exclusions>**/gov/va/bsms/cwinr/eva/*, **/generated/**/*</sonar.exclusions>
+		<sonar.coverage.exclusions>**/gov/va/bsms/cwinr/eva/*,
+			**/generated/**/*</sonar.coverage.exclusions>
+	</properties>
 </project>
