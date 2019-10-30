@@ -35,7 +35,7 @@ public class SoapClient {
 
 	private static final String BGS_SOAP_SERVICE_INVALID_STATUS = "BGS SOAP Service invalid status: {}";
 
-	static Logger logger = LoggerFactory.getLogger(SoapClient.class);
+	private static Logger logger = LoggerFactory.getLogger(SoapClient.class);
 
 	private static final String TEMPLATE_XML_FILE_NAME = "template.xml";
 

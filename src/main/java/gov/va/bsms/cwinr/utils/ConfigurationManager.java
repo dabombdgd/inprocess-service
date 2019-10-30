@@ -17,7 +17,7 @@ import gov.va.bsms.cwinr.exceptions.ConfigurationManagerException;
 public enum ConfigurationManager {
 	INSTANCE;
 
-	static Logger logger = LoggerFactory.getLogger(ConfigurationManager.class);
+	private static Logger logger = LoggerFactory.getLogger(ConfigurationManager.class);
 	private PropertyResourceBundle resources;
 
 	public PropertyResourceBundle getResources() throws ConfigurationManagerException {

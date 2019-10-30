@@ -13,9 +13,10 @@ import org.slf4j.LoggerFactory;
 import gov.va.bsms.cwinr.exceptions.CaseNotesDaoException;
 import gov.va.bsms.cwinr.exceptions.ConfigurationManagerException;
 import gov.va.bsms.cwinr.exceptions.ConnectionManagerException;
+import gov.va.bsms.cwinr.utils.DaoUtils;
 
 public class CaseNoteDao {
-	static Logger logger = LoggerFactory.getLogger(CaseNoteDao.class);
+	private static Logger logger = LoggerFactory.getLogger(CaseNoteDao.class);
 	
 	// constants for logging
 	private static final String LOG_ERROR_TABLE_INSERTION_ERROR_MSG = "log-error table insertion error for the following case note: case_id:{}, case_note_id:{}";
@@ -66,11 +67,7 @@ public class CaseNoteDao {
 		try {
 			conn = ConnectionManager.getConnection(true);
 			selectCaseNotesForProcessingStmnt = conn.prepareStatement(caseNoteProcessingSQL);
-		} catch (SQLException e) {
-			logger.error(e.getMessage());
-			ConnectionManager.closeDatabaseObjects(selectCaseNotesForProcessingStmnt, conn);
-			throw new CaseNotesDaoException(e.getMessage(), e);
-		} catch (ConnectionManagerException|ConfigurationManagerException e) {
+		} catch (SQLException|ConnectionManagerException|ConfigurationManagerException e) {
 			ConnectionManager.closeDatabaseObjects(selectCaseNotesForProcessingStmnt, conn);
 			throw new CaseNotesDaoException(e.getMessage(), e);
 		}
@@ -97,7 +94,6 @@ public class CaseNoteDao {
 				}
 			}
 		} catch (SQLException e) {
-			logger.error(e.getMessage());
 			throw new CaseNotesDaoException(e.getMessage(), e);
 		} finally {
 			// close the preparedstatement and the connection objects
@@ -122,7 +118,7 @@ public class CaseNoteDao {
 	 * @param erroredCaseNotes
 	 * @throws CaseNotesDaoException
 	 */
-	public void insertErrorCaseNotes(List<CaseNote2> erroredCaseNotes) throws CaseNotesDaoException {
+	public void insertErrorCaseNotes(List<CaseNote2> erroredCaseNotes) {
 		PreparedStatement updateErrorTableStmnt = null;
 		Connection conn = null;
 		
@@ -130,18 +126,13 @@ public class CaseNoteDao {
 		try {
 			conn = ConnectionManager.getConnection(false);
 			updateErrorTableStmnt = conn.prepareStatement(INSERT_LOG_ERROR_TBL_SQL);
-		} catch (SQLException e) {
-			logger.error(e.getMessage());
-			ConnectionManager.closeDatabaseObjects(updateErrorTableStmnt, conn);
-		} catch (ConnectionManagerException|ConfigurationManagerException e) {
+		} catch (SQLException|ConnectionManagerException|ConfigurationManagerException e) {
 			logger.error(e.getMessage());
 			ConnectionManager.closeDatabaseObjects(updateErrorTableStmnt, conn);
 		}
 
 		// iterate through the case notes for insertion into log_error table
 		for(CaseNote2 erroredCaseNote : erroredCaseNotes) {
-			String caseId = erroredCaseNote.getCaseId();
-			String caseNoteId = erroredCaseNote.getCaseNoteId();
 			try {
 				if(updateErrorTableStmnt != null && conn != null) {
 					updateErrorTableStmnt.setString(1,erroredCaseNote.getClientId());
@@ -151,13 +142,13 @@ public class CaseNoteDao {
 					conn.commit();
 				} else {
 					// log the case note with the case_id and the case_note_id for the failed transaction
-					logger.error(LOG_ERROR_TABLE_INSERTION_ERROR_MSG, caseId, caseNoteId);
+					DaoUtils.logDatabaseErrorParamMessage(LOG_ERROR_TABLE_INSERTION_ERROR_MSG, erroredCaseNote.getCaseId(), erroredCaseNote.getCaseNoteId());
 				}
 	
 			} catch (SQLException e) {
 				logger.error(e.getMessage());
 				// log the case note with the case_id and the case_note_id for the failed transaction
-				logger.error(LOG_ERROR_TABLE_INSERTION_ERROR_MSG, caseId, caseNoteId);
+				DaoUtils.logDatabaseErrorParamMessage(LOG_ERROR_TABLE_INSERTION_ERROR_MSG, erroredCaseNote.getCaseId(), erroredCaseNote.getCaseNoteId());
 			}
 		}
 
@@ -171,7 +162,7 @@ public class CaseNoteDao {
 	 * @param erroredBgsCaseNotes
 	 * @throws CaseNotesDaoException
 	 */
-	public void updateErroredCaseNote(List<CaseNote2> erroredDbCaseNotes) throws CaseNotesDaoException {
+	public void updateErroredCaseNote(List<CaseNote2> erroredDbCaseNotes) {
 		PreparedStatement updateErrorCaseNoteTableStmnt = null;
 		Connection conn = null;
 		
@@ -179,18 +170,13 @@ public class CaseNoteDao {
 		try {
 			conn = ConnectionManager.getConnection(false);
 	        updateErrorCaseNoteTableStmnt = conn.prepareStatement(UPDATE_TBL_IN_FROM_SARA_ERROR_SQL);
-		} catch (SQLException e) {
-			logger.error(e.getMessage());
-			ConnectionManager.closeDatabaseObjects(updateErrorCaseNoteTableStmnt, conn);
-		} catch (ConnectionManagerException|ConfigurationManagerException e) {
+		} catch (SQLException|ConnectionManagerException|ConfigurationManagerException e) {
 			logger.error(e.getMessage());
 			ConnectionManager.closeDatabaseObjects(updateErrorCaseNoteTableStmnt, conn);
 		}
 
 		// iterate through the case notes for update of the TBL_IN_FROM_SARA table
 		for(CaseNote2 erroredCaseNote : erroredDbCaseNotes) {
-			String caseId = erroredCaseNote.getCaseId();
-			String caseNoteId = erroredCaseNote.getCaseNoteId();
 			try {
 				if(updateErrorCaseNoteTableStmnt != null && conn != null) {
 					updateErrorCaseNoteTableStmnt.setInt(1, Integer.parseInt(erroredCaseNote.getInFromSaraId()));
@@ -198,13 +184,13 @@ public class CaseNoteDao {
 					conn.commit();
 				} else {
 					// log the case note with the case_id and the case_note_id for the failed transaction
-					logger.error(TBL_IN_FROM_SARA_TABLE_UPDATE_ERROR_MSG, caseId, caseNoteId);
+					DaoUtils.logDatabaseErrorParamMessage(TBL_IN_FROM_SARA_TABLE_UPDATE_ERROR_MSG, erroredCaseNote.getCaseId(), erroredCaseNote.getCaseNoteId());
 				}
 	
 			} catch (SQLException e) {
 				logger.error(e.getMessage());
 				// log the case note with the case_id and the case_note_id for the failed transaction
-				logger.error(TBL_IN_FROM_SARA_TABLE_UPDATE_ERROR_MSG, caseId, caseNoteId);
+				DaoUtils.logDatabaseErrorParamMessage(TBL_IN_FROM_SARA_TABLE_UPDATE_ERROR_MSG, erroredCaseNote.getCaseId(), erroredCaseNote.getCaseNoteId());
 			}
 		}
 
@@ -219,7 +205,7 @@ public class CaseNoteDao {
 	 * @param nonErroredCaseNotes
 	 * @throws CaseNotesDaoException
 	 */
-	public void updateNonDbErroredCaseNotes(List<CaseNote2> nonErroredCaseNotes) throws CaseNotesDaoException {
+	public void updateNonDbErroredCaseNotes(List<CaseNote2> nonErroredCaseNotes) {
 		PreparedStatement updateCaseNoteTableStmnt = null;
 		Connection conn = null;
 		
@@ -227,18 +213,13 @@ public class CaseNoteDao {
 		try {
 			conn = ConnectionManager.getConnection(false);
 	        updateCaseNoteTableStmnt = conn.prepareStatement(UPDATE_TBL_IN_FROM_SARA_SUCCESS_SQL);
-		} catch (SQLException e) {
-			logger.error(e.getMessage());
-			ConnectionManager.closeDatabaseObjects(updateCaseNoteTableStmnt, conn);
-		} catch (ConnectionManagerException|ConfigurationManagerException e) {
+		} catch (SQLException|ConnectionManagerException|ConfigurationManagerException e) {
 			logger.error(e.getMessage());
 			ConnectionManager.closeDatabaseObjects(updateCaseNoteTableStmnt, conn);
 		}
 
 		// iterate through the case notes for update of the TBL_IN_FROM_SARA table
 		for(CaseNote2 nonErroredCaseNote : nonErroredCaseNotes) {
-			String caseId = nonErroredCaseNote.getCaseId();
-			String caseNoteId = nonErroredCaseNote.getCaseNoteId();
 			try {
 				if(updateCaseNoteTableStmnt != null && conn != null) {
 					String additional10Col = nonErroredCaseNote.isUpdate()?"U":"I";
@@ -248,13 +229,13 @@ public class CaseNoteDao {
 					conn.commit();
 				} else {
 					// log the case note with the case_id and the case_note_id for the failed transaction
-					logger.error(TBL_IN_FROM_SARA_TABLE_UPDATE_ERROR_MSG, caseId, caseNoteId);
+					DaoUtils.logDatabaseErrorParamMessage(TBL_IN_FROM_SARA_TABLE_UPDATE_ERROR_MSG, nonErroredCaseNote.getCaseId(), nonErroredCaseNote.getCaseNoteId());
 				}
 	
 			} catch (SQLException e) {
 				logger.error(e.getMessage());
 				// log the case note with the case_id and the case_note_id for the failed transaction
-				logger.error(TBL_IN_FROM_SARA_TABLE_UPDATE_ERROR_MSG, caseId, caseNoteId);
+				DaoUtils.logDatabaseErrorParamMessage(TBL_IN_FROM_SARA_TABLE_UPDATE_ERROR_MSG, nonErroredCaseNote.getCaseId(), nonErroredCaseNote.getCaseNoteId());
 			} 
 		}
 
@@ -269,7 +250,7 @@ public class CaseNoteDao {
 	 * @param newCaseNotes
 	 * @throws CaseNotesDaoException
 	 */
-	public void insertNewCaseNotes(List<CaseNote2> newCaseNotes) throws CaseNotesDaoException {
+	public void insertNewCaseNotes(List<CaseNote2> newCaseNotes) {
 		PreparedStatement insertSaraCorpDbXrefTableStmnt = null;
 		Connection conn = null;
 		
@@ -277,10 +258,7 @@ public class CaseNoteDao {
 		try {
 			conn = ConnectionManager.getConnection(false);
 	        insertSaraCorpDbXrefTableStmnt = conn.prepareStatement(INSERT_SARA_CORPDB_XREF_SQL);
-		} catch (SQLException e) {
-			logger.error(e.getMessage());
-			ConnectionManager.closeDatabaseObjects(insertSaraCorpDbXrefTableStmnt, conn);
-		} catch (ConnectionManagerException|ConfigurationManagerException e) {
+		} catch (SQLException|ConnectionManagerException|ConfigurationManagerException e) {
 			logger.error(e.getMessage());
 			ConnectionManager.closeDatabaseObjects(insertSaraCorpDbXrefTableStmnt, conn);
 		}
@@ -297,13 +275,13 @@ public class CaseNoteDao {
 					conn.commit();
 				} else {
 					// log the case note with the case_id and the case_note_id for the failed transaction
-					logger.error(SARA_CORPDB_XREF_TABLE_INSERTION_ERROR_MSG, caseId, caseNoteId);
+					DaoUtils.logDatabaseErrorParamMessage(SARA_CORPDB_XREF_TABLE_INSERTION_ERROR_MSG, caseId, caseNoteId);
 				}
 	
 			} catch (SQLException e) {
 				logger.error(e.getMessage());
 				// log the case note with the case_id and the case_note_id for the failed transaction
-				logger.error(SARA_CORPDB_XREF_TABLE_INSERTION_ERROR_MSG, caseId, caseNoteId);
+				DaoUtils.logDatabaseErrorParamMessage(SARA_CORPDB_XREF_TABLE_INSERTION_ERROR_MSG, caseId, caseNoteId);
 			}
 		}
 

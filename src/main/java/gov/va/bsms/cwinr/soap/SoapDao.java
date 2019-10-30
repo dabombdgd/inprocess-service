@@ -15,7 +15,6 @@ import gov.va.vba.vetsnet.services.cases.CaseWebService_Service;
 import gov.va.vba.vetsnet.services.cases.MessageException;*/
 
 public class SoapDao {
-	private static Logger logger = LoggerFactory.getLogger(SoapDao.class);
 	 
 	  private static final QName SERVICE_NAME = 
 	    new QName("http://cases.services.vetsnet.vba.va.gov/", 

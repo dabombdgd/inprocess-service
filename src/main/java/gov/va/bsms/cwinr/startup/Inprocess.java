@@ -13,7 +13,7 @@ import gov.va.bsms.cwinr.utils.ConfigurationManager;
 public class Inprocess {
 	private static Logger logger = LoggerFactory.getLogger(Inprocess.class);
 
-	public static void main(String[] args) {		
+	public static void main(String[] args) throws CaseNotesDaoException {		
 		// initialize start time
         long lStartTime = System.nanoTime();
         
@@ -35,19 +35,10 @@ public class Inprocess {
 		logger.info("Retrieved {} case notes for processing.\n", caseNoteAggregator.getCaseNotesForProcessing().size());
 		
 		// log all of the CaseNotes with DB errors to the log_error table
-		try {
-			cnDao.insertErrorCaseNotes(caseNoteAggregator.getCaseNotesWithDbError());
-		} catch (CaseNotesDaoException e) {
-			logger.error(e.getMessage());
-		}
+		cnDao.insertErrorCaseNotes(caseNoteAggregator.getCaseNotesWithDbError());
 		logger.info("Logged {} case notes with a null ID.\n", caseNoteAggregator.getCaseNotesWithDbError().size());
 		
-		// update CaseNotes with DB errors in the TBL_IN_FROM_SARA table
-		try {
-			cnDao.updateErroredCaseNote(caseNoteAggregator.getCaseNotesWithDbError());
-		} catch (CaseNotesDaoException e) {
-			logger.error(e.getMessage());
-		}
+		cnDao.updateErroredCaseNote(caseNoteAggregator.getCaseNotesWithDbError());
 		logger.info("Updated {} case notes that had a null ID.\n", caseNoteAggregator.getCaseNotesWithDbError().size());
 		
 		// call the SOAP client DAO?
@@ -56,28 +47,13 @@ public class Inprocess {
 		soapDao.processCaseNotesWithBgsServiceMvp(caseNoteAggregator.getCaseNotesForProcessing());
 		// ------------------------------------------------------
 
-		// log all of the CaseNotes with SOAP errors to the log_error table
-		try {
-			cnDao.insertErrorCaseNotes(caseNoteAggregator.getCaseNoteswithBgsError());
-		} catch (CaseNotesDaoException e) {
-			logger.error(e.getMessage());
-		}
+		cnDao.insertErrorCaseNotes(caseNoteAggregator.getCaseNoteswithBgsError());
 		logger.info("Logged {} case notes with a service processing error.\n", caseNoteAggregator.getCaseNoteswithBgsError().size());
 		
-		// update CaseNotes with non DB errors in the TBL_IN_FROM_SARA table
-		try {
-			cnDao.updateNonDbErroredCaseNotes(caseNoteAggregator.getCaseNotesWithNonDbError());
-		} catch (CaseNotesDaoException e) {
-			logger.error(e.getMessage());
-		}
+		cnDao.updateNonDbErroredCaseNotes(caseNoteAggregator.getCaseNotesWithNonDbError());
 		logger.info("Updated {} case notes that have an ID.\n", caseNoteAggregator.getCaseNotesWithNonDbError().size());
 		
-		// insert new CaseNotes in the SARA_CORPDB_XREF table
-		try {
-			cnDao.insertNewCaseNotes(caseNoteAggregator.getNewCaseNotes());
-		} catch (CaseNotesDaoException e) {
-			logger.error(e.getMessage());
-		}
+		cnDao.insertNewCaseNotes(caseNoteAggregator.getNewCaseNotes());
 		logger.info("Inserted {} new case notes.\n", caseNoteAggregator.getNewCaseNotes().size());
 		
 		// end time
