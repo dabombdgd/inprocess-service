@@ -77,7 +77,7 @@ public class CaseNoteDao {
 
 		try {
 			CaseNote2 tempCaseNote;
-			if(selectCaseNotesForProcessingStmnt != null) {
+			if(selectCaseNotesForProcessingStmnt != null && conn != null) {
 				rs = selectCaseNotesForProcessingStmnt.executeQuery();
 				while (rs.next()) {
 					tempCaseNote = new CaseNote2();
@@ -143,7 +143,7 @@ public class CaseNoteDao {
 			String caseId = erroredCaseNote.getCaseId();
 			String caseNoteId = erroredCaseNote.getCaseNoteId();
 			try {
-				if(updateErrorTableStmnt != null) {
+				if(updateErrorTableStmnt != null && conn != null) {
 					updateErrorTableStmnt.setString(1,erroredCaseNote.getClientId());
 					updateErrorTableStmnt.setInt(2,Integer.parseInt(erroredCaseNote.getInFromSaraId()));
 					updateErrorTableStmnt.setString(3,erroredCaseNote.getError());
@@ -192,7 +192,7 @@ public class CaseNoteDao {
 			String caseId = erroredCaseNote.getCaseId();
 			String caseNoteId = erroredCaseNote.getCaseNoteId();
 			try {
-				if(updateErrorCaseNoteTableStmnt != null) {
+				if(updateErrorCaseNoteTableStmnt != null && conn != null) {
 					updateErrorCaseNoteTableStmnt.setInt(1, Integer.parseInt(erroredCaseNote.getInFromSaraId()));
 					updateErrorCaseNoteTableStmnt.executeUpdate();
 					conn.commit();
@@ -240,7 +240,7 @@ public class CaseNoteDao {
 			String caseId = nonErroredCaseNote.getCaseId();
 			String caseNoteId = nonErroredCaseNote.getCaseNoteId();
 			try {
-				if(updateCaseNoteTableStmnt != null) {
+				if(updateCaseNoteTableStmnt != null && conn != null) {
 					String additional10Col = nonErroredCaseNote.isUpdate()?"U":"I";
 					updateCaseNoteTableStmnt.setString(1, additional10Col);
 					updateCaseNoteTableStmnt.setInt(2, Integer.parseInt(nonErroredCaseNote.getInFromSaraId()));
@@ -290,7 +290,7 @@ public class CaseNoteDao {
 			String caseId = newCaseNote.getCaseId();
 			String caseNoteId = newCaseNote.getCaseNoteId();
 			try {
-				if(insertSaraCorpDbXrefTableStmnt != null) {
+				if(insertSaraCorpDbXrefTableStmnt != null && conn != null) {
 					insertSaraCorpDbXrefTableStmnt.setInt(1,Integer.parseInt(newCaseNote.getCaseNoteId()));
 					insertSaraCorpDbXrefTableStmnt.setInt(2,Integer.parseInt(newCaseNote.getCaseDocumentId()));
 					insertSaraCorpDbXrefTableStmnt.executeUpdate();
