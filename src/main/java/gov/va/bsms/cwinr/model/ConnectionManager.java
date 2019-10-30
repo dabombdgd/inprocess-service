@@ -59,14 +59,14 @@ public class ConnectionManager {
 			try {
 				prepStmnt.close();
 			} catch (SQLException e) {
-				logger.error(e.getMessage());
+				logger.warn(e.getMessage());
 			}
 		}
 		if(conn!=null) {
 			try {
 				conn.close();
 			} catch (SQLException e) {
-				logger.error(e.getMessage());
+				logger.warn(e.getMessage());
 			}
 		}
 	}

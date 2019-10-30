@@ -23,8 +23,10 @@ public class CaseNoteAggregator {
 		CaseNoteDao cnDao = new CaseNoteDao();
 		try {
 			setCaseNotesForProcessing(cnDao.getCaseNotesForProcessing());
-			
-			logger.debug("CaseNoteAggregator() count:{}", getCaseNotesForProcessing().size());
+
+			if(logger.isDebugEnabled()) {
+				logger.debug("CaseNoteAggregator() count:{}", getCaseNotesForProcessing().size());
+			}
 		} catch (CaseNotesDaoException e) {
 			logger.error(e.getMessage());
 			this.caseNotesForProcessing = Collections.<CaseNote2>emptyList();
@@ -52,8 +54,10 @@ public class CaseNoteAggregator {
 				returnVal.add(tempCaseNote);
 			}
 		}
-		
-		logger.debug("getCaseNotesWithNonDbError() count:{}", returnVal.size());
+
+		if(logger.isDebugEnabled()) {
+			logger.debug("getCaseNotesWithNonDbError() count:{}", returnVal.size());
+		}
 
 		return returnVal;
 	}
@@ -69,11 +73,15 @@ public class CaseNoteAggregator {
 		for (CaseNote2 tempCaseNote : this.caseNotesForProcessing) {
 			if (tempCaseNote.isWithDBError()) {
 				returnVal.add(tempCaseNote);
-				logger.debug("CaseNote - caseid:{} withDbError:{}", tempCaseNote.getCaseId(), tempCaseNote.isWithDBError());
+				if(logger.isDebugEnabled()) {
+					logger.debug("CaseNote - caseid:{} withDbError:{}", tempCaseNote.getCaseId(), tempCaseNote.isWithDBError());
+				}
 			}
 		}
-		
-		logger.debug("getCaseNotesWithDbError() count:{}", returnVal.size());
+
+		if(logger.isDebugEnabled()) {
+			logger.debug("getCaseNotesWithDbError() count:{}", returnVal.size());
+		}
 
 		return returnVal;
 	}
@@ -91,8 +99,10 @@ public class CaseNoteAggregator {
 				returnVal.add(tempCaseNote);
 			}
 		}
-		
-		logger.debug("getCaseNoteswithBgsError() count:{}", returnVal.size());
+
+		if(logger.isDebugEnabled()) {
+			logger.debug("getCaseNoteswithBgsError() count:{}", returnVal.size());
+		}
 
 		return returnVal;
 	}
@@ -112,8 +122,10 @@ public class CaseNoteAggregator {
 				returnVal.add(tempCaseNote);
 			}
 		}
-		
-		logger.debug("getNewCaseNotes() count:{}", returnVal.size());
+
+		if(logger.isDebugEnabled()) {
+			logger.debug("getNewCaseNotes() count:{}", returnVal.size());
+		}
 
 		return returnVal;
 	}

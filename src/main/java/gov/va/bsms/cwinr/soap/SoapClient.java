@@ -13,6 +13,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Scanner;
 
+import org.apache.commons.lang.StringEscapeUtils;
+
 import org.apache.cxf.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,29 +33,29 @@ public class SoapClient {
 
 	private static final String ERROR_WITH_CONFIGURATION_MANAGER = "Error with Configuration Manager.";
 
-	private static final String BGS_SOAP_SERVICE_INVALID_STATUS = "BGS SOAP Service invalid status: ";
+	private static final String BGS_SOAP_SERVICE_INVALID_STATUS = "BGS SOAP Service invalid status: {}";
 
 	static Logger logger = LoggerFactory.getLogger(SoapClient.class);
-	
-	private static final String update_fn = "template.xml";
+
+	private static final String TEMPLATE_XML_FILE_NAME = "template.xml";
 
 	public SoapClient() {
 		// do nothing for nothing
 	}
 
 	private void sendToBGS(CaseNote2 note, String request) throws SoapClientException {
-		String bgsUrl= "";
+		String bgsUrl = "";
 		URL url = null;
 		HttpURLConnection con = null;
 		DataOutputStream wr = null;
-		
+
 		try {
-			bgsUrl = ConfigurationManager.INSTANCE.getResources().getString("bgs-url2");
+			bgsUrl = ConfigurationManager.INSTANCE.getResources().getString("bgs-url");
 		} catch (ConfigurationManagerException e) {
 			note.setError(PRE_BGS_SOAP_SERVICE_ERROR + e.toString());
 			throw new SoapClientException(ERROR_WITH_CONFIGURATION_MANAGER, e);
 		}
-		
+
 		try {
 			url = new URL(bgsUrl);
 			con = (HttpURLConnection) url.openConnection();
@@ -62,27 +64,27 @@ public class SoapClient {
 			con.setDoOutput(true);
 			wr = new DataOutputStream(con.getOutputStream());
 			wr.writeBytes(request);
-		} catch(MalformedURLException e) {
+		} catch (MalformedURLException e) {
 			note.setError(PRE_BGS_SOAP_SERVICE_ERROR + e.toString());
 			throw new SoapClientException(ERROR_WITH_SOAP_SERVICE, e);
 		} catch (IOException e) {
 			note.setError(PRE_BGS_SOAP_SERVICE_ERROR + e.toString());
 			throw new SoapClientException(ERROR_WITH_SOAP_SERVICE, e);
 		} finally {
-			if(wr != null) {
+			if (wr != null) {
 				try {
 					wr.flush();
 				} catch (IOException e) {
-					// do nothing
+					logger.warn("DataOutputStream did not close properly.");
 				}
 				try {
 					wr.close();
 				} catch (IOException e) {
-					// do nothing
+					logger.warn("DataOutputStream did not close properly.");
 				}
 			}
 		}
-		
+
 		String responseStatus = "";
 
 		try {
@@ -91,13 +93,13 @@ public class SoapClient {
 		} catch (IOException e) {
 			note.setError(PRE_BGS_SOAP_SERVICE_ERROR + e.toString());
 			throw new SoapClientException(ERROR_WITH_SOAP_SERVICE, e);
-		} 
-		
-		if (!responseStatus.equalsIgnoreCase("OK")) {
-			logger.warn(BGS_SOAP_SERVICE_INVALID_STATUS + responseStatus); // Delete this line
-			note.setError(BGS_SOAP_SERVICE_INVALID_STATUS + responseStatus);
 		}
-		
+
+		if (!responseStatus.equalsIgnoreCase("OK")) {
+			logger.warn(BGS_SOAP_SERVICE_INVALID_STATUS, responseStatus);
+			note.setError(String.format(BGS_SOAP_SERVICE_INVALID_STATUS, responseStatus));
+		}
+
 		BufferedReader in = null;
 		StringBuilder response = null;
 
@@ -112,17 +114,17 @@ public class SoapClient {
 			note.setError(PRE_BGS_SOAP_SERVICE_ERROR + e.toString());
 			throw new SoapClientException(ERROR_WITH_SOAP_SERVICE, e);
 		} finally {
-			if(in != null) {
+			if (in != null) {
 				try {
 					in.close();
 				} catch (IOException e) {
-					// do nothing
+					logger.warn("BufferedReader did not close properly.");
 				}
 			}
 		}
-		
+
 		// set the SOAP result from BGS
-		if(response != null) {
+		if (response != null) {
 			note.setSoapResult(response.toString());
 		}
 	}
@@ -139,10 +141,12 @@ public class SoapClient {
 		validate(note);
 
 		try {
-			String template = readFile(update_fn);
+			String template = readFile(TEMPLATE_XML_FILE_NAME);
 			String request = template.replace("<CaseDcmntDTO />", toCaseDcmntDTO(note));
-			
-			logger.debug(request);
+
+			if(logger.isDebugEnabled()) {
+				logger.debug(request);
+			}
 
 			sendToBGS(note, request);
 
@@ -150,12 +154,10 @@ public class SoapClient {
 			String status = getResultTag(note, "jrnStatusTypeCd").toLowerCase();
 			if ("i".equalsIgnoreCase(status)) {
 				String soapCaseDocumentId = getResultTag(note, "caseDcmntId");
-				if(!StringUtils.isEmpty(soapCaseDocumentId)) {
+				if (!StringUtils.isEmpty(soapCaseDocumentId)) {
 					note.setCaseDocumentId(soapCaseDocumentId);
 				}
-			} else if("u".equalsIgnoreCase(status)) {
-				// do nothing
-			} else {
+			} else if (!"u".equalsIgnoreCase(status)) {
 				// else set SOAP error
 				note.setError("PRE BGS SOAP Service status error: " + status + ".");
 			}
@@ -164,49 +166,45 @@ public class SoapClient {
 			logger.error(e.getMessage());
 		}
 
-		//:TODO update casenote with SOAP response
+		// :TODO update casenote with SOAP response
 	}
-	
-/**
- * THESE ARE METHODS FROM CaseNote obj ---------------------------------------------
- */
-	
+
+	/**
+	 * THESE ARE METHODS FROM CaseNote obj
+	 * ---------------------------------------------
+	 */
+
 	private String xml_escape(String s) {
-		if(!StringUtils.isEmpty(s)) {
-			s = s.replaceAll("&", "&amp;");
-			s = s.replaceAll("<", "&lt;");
-			s = s.replaceAll(">", "&gt;");
-			s = s.replaceAll("'", "&apos;");
-			s = s.replaceAll("\"", "&quot;");
+		if (!StringUtils.isEmpty(s)) {
+			s = StringEscapeUtils.escapeXml(s);
 		} else {
-			s= "No data available.";
+			s = "No data available.";
 		}
-		logger.debug("Escaped XML: {}", s);
+		if(logger.isDebugEnabled()) {
+			logger.debug("Escaped XML: {}", s);
+		}
 		return s;
 	}
-	
+
 	public String getResultTag(CaseNote2 casenote, String tag) {
 		String returnVal = "";
-		try {
-			// if casenote.getSoapResult() is not empty or null
-			if(!StringUtils.isEmpty(casenote.getSoapResult())) {
-				String s = casenote.getSoapResult().split("<" + tag + ">")[1];
-				// if String s is not empty or null
-				if(!StringUtils.isEmpty(s)) {
-					returnVal =  s.split("</" + tag + ">")[0];
-				}
+
+		// if casenote.getSoapResult() is not empty or null
+		if (!StringUtils.isEmpty(casenote.getSoapResult())) {
+			String s = casenote.getSoapResult().split("<" + tag + ">")[1];
+			// if String s is not empty or null
+			if (!StringUtils.isEmpty(s)) {
+				returnVal = s.split("</" + tag + ">")[0];
 			}
-		} catch (Exception e) { //TODO: refactor to not capture general exception
-			casenote.setError("PRE BGS SOAP Service Fault Exception missing tag " + tag + " in result");
-			logger.error("PRE BGS SOAP Service Result Tag Error: {} does not exist or is empty.", tag);
-			returnVal = "";
 		}
-		
+
 		return returnVal;
 	}
 
 	private String tag(String tag, String value) {
-		logger.debug("SOAP tag: {}", tag);
+		if(logger.isDebugEnabled()) {
+			logger.debug("SOAP tag: {}", tag);
+		}
 		return ("\n<" + tag + ">" + xml_escape(value) + "</" + tag + ">");
 	}
 
@@ -244,5 +242,5 @@ public class SoapClient {
 		DateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss");
 		return dateFormat.format(new Date());
 	}
-	
+
 }

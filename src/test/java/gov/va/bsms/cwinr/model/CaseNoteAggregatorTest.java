@@ -61,7 +61,7 @@ public class CaseNoteAggregatorTest {
 		}
 
 		PowerMockito.mockStatic(ConnectionManager.class);
-		when(ConnectionManager.getConnection(true)).thenReturn(conn);
+		when(ConnectionManager.getConnection(any(Boolean.class))).thenReturn(conn);
 		when(conn.prepareStatement(any(String.class))).thenReturn(stmt);
 		when(stmt.executeQuery()).thenReturn(rs);
 		when(cnDao.getCaseNotesForProcessing()).thenReturn(caseNotesForProcessing);

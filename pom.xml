@@ -158,6 +158,11 @@
 			<version>19.3</version>
 		</dependency>
 		<dependency>
+		    <groupId>commons-lang</groupId>
+		    <artifactId>commons-lang</artifactId>
+		    <version>2.6</version>
+		</dependency>
+		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
 			<version>1.7.5</version>
@@ -201,8 +206,7 @@
 		<cxf.version>3.3.3</cxf.version>
 		<mockito.version>3.1.0</mockito.version>
 		<powermock.version>2.0.4</powermock.version>
-		<sonar.exclusions>**/gov/va/bsms/cwinr/eva/*, **/generated/**/*</sonar.exclusions>
-		<sonar.coverage.exclusions>**/gov/va/bsms/cwinr/eva/*,
-			**/generated/**/*</sonar.coverage.exclusions>
+		<sonar.exclusions>**/generated/**/*</sonar.exclusions>
+		<sonar.coverage.exclusions>**/generated/**/*</sonar.coverage.exclusions>
 	</properties>
 </project>
