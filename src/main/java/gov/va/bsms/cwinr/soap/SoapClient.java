@@ -8,13 +8,9 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Scanner;
 
 import org.apache.commons.lang.StringEscapeUtils;
-
 import org.apache.cxf.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,9 +34,12 @@ public class SoapClient {
 	private static Logger logger = LoggerFactory.getLogger(SoapClient.class);
 
 	private static final String TEMPLATE_XML_FILE_NAME = "template.xml";
+	
+	private boolean bgsMock = false;
 
 	public SoapClient() {
-		// do nothing for nothing
+		// determine if the JAVA app will use the live BGS SOAP service or the mock response
+		updateBgsMock();
 	}
 
 	private void sendToBGS(CaseNote2 note, String request) throws SoapClientException {
@@ -129,6 +128,33 @@ public class SoapClient {
 		}
 	}
 
+	private void sendToBGSMock(CaseNote2 note, String request) throws SoapClientException {
+		String response = "<S:Envelope xmlns:S=\"http://schemas.xmlsoap.org/soap/envelope/\">\r\n" + 
+				"	<S:Body>\r\n" + 
+				"		<ns2:updateCaseDcmntResponse xmlns:ns2=\"http://cases.services.vetsnet.vba.va.gov/\">\r\n" + 
+				"			<CaseDcmntDTO>\r\n" + 
+				"				<bnftClaimNoteTypeCd>001</bnftClaimNoteTypeCd> \r\n" + 
+				"				<caseDcmntId>3612</caseDcmntId> \r\n" + 
+				"				<caseId>65858</caseId> \r\n" + 
+				"				<dcmntTxt>inserting a note</dcmntTxt> \r\n" + 
+				"				<jrnDt>2019-07-11T15:21:12-05:00</jrnDt> \r\n" + 
+				"				<jrnLctnId>281</jrnLctnId> \r\n" + 
+				"				<jrnObjId>VBMS</jrnObjId> \r\n" + 
+				"				<jrnStatusTypeCd>I</jrnStatusTypeCd> \r\n" + 
+				"				<jrnUserId>281CEASL</jrnUserId> \r\n" + 
+				"				<modifdDt>2019-07-11T15:21:12-05:00</modifdDt> \r\n" + 
+				"			</CaseDcmntDTO>\r\n" + 
+				"		</ns2:updateCaseDcmntResponse>\r\n" + 
+				"	</S:Body>\r\n" + 
+				"</S:Envelope>";
+		
+
+		// set the SOAP result from BGS
+		if (response != null) {
+			note.setSoapResult(response.toString());
+		}
+	}
+
 	private String readFile(String fn) throws IOException {
 		Scanner in = new Scanner(new File(fn));
 		in.useDelimiter("\\Z");
@@ -148,7 +174,12 @@ public class SoapClient {
 				logger.debug(request);
 			}
 
-			sendToBGS(note, request);
+			if(isBgsMock()) {
+				sendToBGSMock(note, request);
+				logger.warn("---------- MOCK BGS SOAP CALL! -----------");
+			} else {
+				sendToBGS(note, request);
+			}
 
 			// Status for Update and Insert
 			String status = getResultTag(note, "jrnStatusTypeCd").toLowerCase();
@@ -165,8 +196,6 @@ public class SoapClient {
 			note.setError(PRE_BGS_SOAP_SERVICE_ERROR + e.toString());
 			logger.error(e.getMessage());
 		}
-
-		// :TODO update casenote with SOAP response
 	}
 
 	/**
@@ -213,7 +242,6 @@ public class SoapClient {
 		if (isValid(caseNote.getCaseDocumentId()))
 			xml += tag("caseDcmntId", caseNote.getCaseDocumentId());
 		xml += tag("caseId", caseNote.getCaseId());
-		xml += tag("modifdDt", caseNote.getModifiedDate());
 		xml += tag("dcmntTxt", caseNote.getCaseNote());
 		xml += "\n</CaseDcmntDTO>";
 
@@ -223,10 +251,7 @@ public class SoapClient {
 	public void validate(CaseNote2 caseNote) {
 		valid(caseNote, "bnftClaimNoteTypeCd", caseNote.getBenefitClaimNoteTypeCd());
 		valid(caseNote, "caseId", caseNote.getCaseId());
-		valid(caseNote, "modifdDt", caseNote.getModifiedDate());
 		valid(caseNote, "dcmntTxt", caseNote.getCaseNote());
-		if (!isValid(caseNote.getModifiedDate()))
-			caseNote.setModifiedDate(now());
 	}
 
 	private boolean isValid(String s) {
@@ -238,9 +263,20 @@ public class SoapClient {
 			caseNote.setError("PRE BGS SOAP Exception invalid " + f + " value");
 	}
 
-	private String now() {
-		DateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss");
-		return dateFormat.format(new Date());
+	private boolean isBgsMock() {
+		return this.bgsMock;
+	}
+
+	private void setBgsMock(boolean bgsMock) {
+		this.bgsMock = bgsMock;
+	}
+	
+	private void updateBgsMock() {
+		try {
+			setBgsMock(Boolean.parseBoolean(ConfigurationManager.INSTANCE.getResources().getString("bgs-mock")));
+		} catch (ConfigurationManagerException e) {
+			setBgsMock(false);
+		}
 	}
 
 }
